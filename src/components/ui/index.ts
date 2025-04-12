@@ -16,6 +16,7 @@ export * from "./drawer";
 export * from "./hover-card";
 export * from "./input";
 export * from "./input-otp";
+export * from "./select";
 export * from "./separator";
 export * from "./skeleton";
 export * from "./slider";
