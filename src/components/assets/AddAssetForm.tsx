@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -127,12 +126,6 @@ export default function AddAssetForm({ isOpen, onClose, onSuccess }: AddAssetFor
     setIsSubmitting(true);
     
     try {
-      // Find the selected user object if assigned
-      let assignedToUser: User | undefined;
-      if (data.isAssigned && data.assignedTo) {
-        assignedToUser = users.find(user => user.id === data.assignedTo);
-      }
-
       const asset = await createAsset({
         name: data.name,
         category: data.category as AssetCategory,
@@ -140,7 +133,6 @@ export default function AddAssetForm({ isOpen, onClose, onSuccess }: AddAssetFor
         purchaseDate: data.purchaseDate,
         warrantyExpiry: data.warrantyExpiry,
         location: data.location,
-        assignedTo: assignedToUser,
         assignedDate: data.isAssigned ? data.assignedDate : undefined,
         serialNumber: data.serialNumber,
         model: data.model,

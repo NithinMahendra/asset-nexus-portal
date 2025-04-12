@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Asset, AssetHistory, User } from "@/types";
+import { Asset, AssetHistory, User, AssetCategory, AssetStatus, UserRole } from "@/types";
 import { toast } from "@/components/ui/use-toast";
 
 // User functions
@@ -38,7 +38,7 @@ export async function createUser(userData: Omit<User, "id">): Promise<User | nul
       email: data.email,
       phone: data.phone || undefined,
       department: data.department || undefined,
-      role: data.role as User["role"],
+      role: data.role as UserRole,
       profileImageUrl: data.profile_image_url || undefined
     };
 
@@ -72,7 +72,7 @@ export async function createAsset(assetData: Omit<Asset, "id" | "assignedTo">): 
           purchase_date: assetData.purchaseDate,
           warranty_expiry: assetData.warrantyExpiry || null,
           location: assetData.location || null,
-          assigned_to: assetData.assignedDate ? assetData.assignedTo?.id : null,
+          assigned_to: null, // We'll handle assignment separately
           assigned_date: assetData.assignedDate || null,
           serial_number: assetData.serialNumber || null,
           model: assetData.model || null,
@@ -96,7 +96,7 @@ export async function createAsset(assetData: Omit<Asset, "id" | "assignedTo">): 
     // Create asset history record
     await createAssetHistory({
       assetId: data.id,
-      action: "created",
+      action: "created" as "created",
       date: new Date().toISOString(),
       userId: "",  // No user ID if this is a system action
       userName: "System",
@@ -107,8 +107,8 @@ export async function createAsset(assetData: Omit<Asset, "id" | "assignedTo">): 
     const newAsset: Asset = {
       id: data.id,
       name: data.name,
-      category: data.category,
-      status: data.status,
+      category: data.category as AssetCategory,
+      status: data.status as AssetStatus,
       purchaseDate: data.purchase_date,
       warrantyExpiry: data.warranty_expiry || undefined,
       location: data.location || undefined,
@@ -163,7 +163,7 @@ export async function createAssetHistory(historyData: Omit<AssetHistory, "id">):
     return {
       id: data.id,
       assetId: data.asset_id,
-      action: data.action,
+      action: data.action as AssetHistory['action'],
       date: data.date,
       userId: data.user_id || "",
       userName: data.user_name,
@@ -194,7 +194,7 @@ export async function getAllUsers(): Promise<User[]> {
       email: user.email,
       phone: user.phone || undefined,
       department: user.department || undefined,
-      role: user.role,
+      role: user.role as UserRole,
       profileImageUrl: user.profile_image_url || undefined
     }));
   } catch (error) {
@@ -230,7 +230,7 @@ export async function getAllAssets(): Promise<Asset[]> {
           email: userData.email,
           phone: userData.phone || undefined,
           department: userData.department || undefined,
-          role: userData.role,
+          role: userData.role as UserRole,
           profileImageUrl: userData.profile_image_url || undefined
         };
       }
@@ -238,8 +238,8 @@ export async function getAllAssets(): Promise<Asset[]> {
       return {
         id: asset.id,
         name: asset.name,
-        category: asset.category,
-        status: asset.status,
+        category: asset.category as AssetCategory,
+        status: asset.status as AssetStatus,
         purchaseDate: asset.purchase_date,
         warrantyExpiry: asset.warranty_expiry || undefined,
         location: asset.location || undefined,
