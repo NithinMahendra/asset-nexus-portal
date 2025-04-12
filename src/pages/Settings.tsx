@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,11 +15,40 @@ import {
   Mail, 
   AlertTriangle,
   FileText,
-  Globe
+  Globe,
+  Moon,
+  Sun
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from '@/components/ui/use-toast';
+import { useTheme } from '@/providers/ThemeProvider';
 
 const SettingsPage = () => {
+  const { theme, setTheme } = useTheme();
+  const [isDarkMode, setIsDarkMode] = useState(theme === 'dark');
+  const [isSettingsSaved, setIsSettingsSaved] = useState(false);
+
+  useEffect(() => {
+    setIsDarkMode(theme === 'dark');
+  }, [theme]);
+
+  const handleDarkModeToggle = (checked: boolean) => {
+    setIsDarkMode(checked);
+    setTheme(checked ? 'dark' : 'light');
+  };
+
+  const handleSaveSettings = () => {
+    setIsSettingsSaved(true);
+    toast({
+      title: "Settings saved",
+      description: "Your settings have been updated successfully."
+    });
+
+    setTimeout(() => {
+      setIsSettingsSaved(false);
+    }, 2000);
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
@@ -122,17 +150,26 @@ const SettingsPage = () => {
                       </Select>
                     </div>
                     
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1">
-                        <Label htmlFor="dark-mode">Dark Mode</Label>
+                    <div className="flex items-center justify-between space-x-4 border p-4 rounded-md">
+                      <div className="space-y-0.5">
+                        <Label className="text-base" htmlFor="dark-mode">Dark Mode</Label>
                         <p className="text-sm text-muted-foreground">Enable dark theme for the interface</p>
                       </div>
-                      <Switch id="dark-mode" />
+                      <div className="flex items-center space-x-2">
+                        <Sun className="h-4 w-4 text-muted-foreground" />
+                        <Switch 
+                          id="dark-mode" 
+                          checked={isDarkMode} 
+                          onCheckedChange={handleDarkModeToggle}
+                        />
+                        <Moon className="h-4 w-4 text-muted-foreground" />
+                      </div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </TabsContent>
+            
             
             <TabsContent value="company" className="space-y-6 mt-0">
               <Card>
@@ -561,9 +598,19 @@ const SettingsPage = () => {
       </Tabs>
       
       <div className="flex justify-end">
-        <Button className="bg-primary">
-          <Save className="mr-2 h-4 w-4" />
-          Save Settings
+        <Button 
+          className="bg-primary" 
+          onClick={handleSaveSettings}
+          disabled={isSettingsSaved}
+        >
+          {isSettingsSaved ? (
+            <>Saved</>
+          ) : (
+            <>
+              <Save className="mr-2 h-4 w-4" />
+              Save Settings
+            </>
+          )}
         </Button>
       </div>
     </div>

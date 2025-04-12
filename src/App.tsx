@@ -12,51 +12,63 @@ import Notifications from "@/pages/Notifications";
 import Reports from "@/pages/Reports";
 import Settings from "@/pages/Settings";
 import NotFound from "@/pages/NotFound";
+import LoginPage from "@/pages/Auth/Login";
+import SignupPage from "@/pages/Auth/Signup";
+import AuthCallback from "@/pages/Auth/AuthCallback";
+import { ThemeProvider } from "@/providers/ThemeProvider";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={
-            <MainLayout>
-              <Dashboard />
-            </MainLayout>
-          } />
-          <Route path="/assets" element={
-            <MainLayout>
-              <Assets />
-            </MainLayout>
-          } />
-          <Route path="/users" element={
-            <MainLayout>
-              <Users />
-            </MainLayout>
-          } />
-          <Route path="/notifications" element={
-            <MainLayout>
-              <Notifications />
-            </MainLayout>
-          } />
-          <Route path="/reports" element={
-            <MainLayout>
-              <Reports />
-            </MainLayout>
-          } />
-          <Route path="/settings" element={
-            <MainLayout>
-              <Settings />
-            </MainLayout>
-          } />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <ThemeProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            {/* Auth Routes */}
+            <Route path="/auth/login" element={<LoginPage />} />
+            <Route path="/auth/signup" element={<SignupPage />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
+            
+            {/* Main App Routes */}
+            <Route path="/" element={
+              <MainLayout>
+                <Dashboard />
+              </MainLayout>
+            } />
+            <Route path="/assets" element={
+              <MainLayout>
+                <Assets />
+              </MainLayout>
+            } />
+            <Route path="/users" element={
+              <MainLayout>
+                <Users />
+              </MainLayout>
+            } />
+            <Route path="/notifications" element={
+              <MainLayout>
+                <Notifications />
+              </MainLayout>
+            } />
+            <Route path="/reports" element={
+              <MainLayout>
+                <Reports />
+              </MainLayout>
+            } />
+            <Route path="/settings" element={
+              <MainLayout>
+                <Settings />
+              </MainLayout>
+            } />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 
