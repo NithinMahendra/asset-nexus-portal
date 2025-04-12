@@ -4,7 +4,7 @@ import {
   AssetHistory, 
   AssetStatus, 
   CategoryBreakdown, 
-  DashboardStats, In, 
+  DashboardStats, 
   Notification, 
   User, 
   UserRole 

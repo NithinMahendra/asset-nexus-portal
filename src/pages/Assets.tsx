@@ -44,7 +44,8 @@ import {
   Trash,
   User,
   History,
-  AlertTriangle
+  AlertTriangle,
+  Check
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
