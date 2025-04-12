@@ -112,7 +112,7 @@ const SettingsPage = () => {
                         <SelectTrigger id="date-format">
                           <SelectValue placeholder="Select date format" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent position="popper" className="bg-white dark:bg-gray-900">
                           <SelectItem value="MM/DD/YYYY">MM/DD/YYYY</SelectItem>
                           <SelectItem value="DD/MM/YYYY">DD/MM/YYYY</SelectItem>
                           <SelectItem value="YYYY-MM-DD">YYYY-MM-DD</SelectItem>
@@ -126,7 +126,7 @@ const SettingsPage = () => {
                         <SelectTrigger id="timezone">
                           <SelectValue placeholder="Select timezone" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent position="popper" className="bg-white dark:bg-gray-900">
                           <SelectItem value="UTC">UTC</SelectItem>
                           <SelectItem value="EST">Eastern Time (EST)</SelectItem>
                           <SelectItem value="CST">Central Time (CST)</SelectItem>
@@ -142,7 +142,7 @@ const SettingsPage = () => {
                         <SelectTrigger id="language">
                           <SelectValue placeholder="Select language" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent position="popper" className="bg-white dark:bg-gray-900">
                           <SelectItem value="en">English</SelectItem>
                           <SelectItem value="es">Spanish</SelectItem>
                           <SelectItem value="fr">French</SelectItem>
@@ -210,7 +210,7 @@ const SettingsPage = () => {
                         <SelectTrigger id="company-country">
                           <SelectValue placeholder="Select country" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent position="popper" className="bg-white dark:bg-gray-900">
                           <SelectItem value="us">United States</SelectItem>
                           <SelectItem value="ca">Canada</SelectItem>
                           <SelectItem value="uk">United Kingdom</SelectItem>

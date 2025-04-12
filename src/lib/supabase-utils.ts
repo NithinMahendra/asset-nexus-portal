@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Asset, AssetHistory, User, AssetCategory, AssetStatus, UserRole } from "@/types";
 import { toast } from "@/components/ui/use-toast";
@@ -253,6 +252,42 @@ export async function getAllAssets(): Promise<Asset[]> {
     });
   } catch (error) {
     console.error("Unexpected error fetching assets:", error);
+    return [];
+  }
+}
+
+// Get monthly asset acquisition data
+export async function getMonthlyAssetAcquisitions(year: number = new Date().getFullYear()): Promise<{month: string, count: number}[]> {
+  try {
+    const { data, error } = await supabase
+      .from("assets")
+      .select("purchase_date")
+      .gte("purchase_date", `${year}-01-01`)
+      .lte("purchase_date", `${year}-12-31`);
+
+    if (error) {
+      console.error("Error fetching asset acquisition data:", error);
+      return [];
+    }
+
+    // Initialize counts for all months
+    const months = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+    const monthlyCounts = months.map(month => ({ month, count: 0 }));
+
+    // Count assets acquired each month
+    data.forEach(asset => {
+      const purchaseDate = new Date(asset.purchase_date);
+      if (purchaseDate.getFullYear() === year) {
+        monthlyCounts[purchaseDate.getMonth()].count++;
+      }
+    });
+
+    return monthlyCounts;
+  } catch (error) {
+    console.error("Unexpected error fetching monthly asset data:", error);
     return [];
   }
 }
