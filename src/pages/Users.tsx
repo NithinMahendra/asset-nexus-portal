@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { users } from '@/services/mockData';
+import { getAllUsers } from '@/lib/supabase-utils';
 import { User, UserRole } from '@/types';
 import { 
   Table, 
@@ -45,6 +45,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import AddUserForm from '@/components/users/AddUserForm';
 
 const roleColors: Record<UserRole, string> = {
   admin: 'bg-red-500',
@@ -61,7 +62,27 @@ const roleTextColors: Record<UserRole, string> = {
 const Users = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
-  const [filteredUsers, setFilteredUsers] = useState<User[]>(users);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAddUserOpen, setIsAddUserOpen] = useState(false);
+  
+  // Load users from Supabase
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  async function loadUsers() {
+    setIsLoading(true);
+    try {
+      const userList = await getAllUsers();
+      setUsers(userList);
+    } catch (error) {
+      console.error("Error loading users:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }
   
   // Filter users based on search term and role filter
   useEffect(() => {
@@ -83,7 +104,7 @@ const Users = () => {
     }
     
     setFilteredUsers(result);
-  }, [searchTerm, roleFilter]);
+  }, [searchTerm, roleFilter, users]);
   
   // Get initials for avatar
   const getInitials = (name: string) => {
@@ -103,7 +124,7 @@ const Users = () => {
             Manage user accounts and permissions
           </p>
         </div>
-        <Button className="bg-primary">
+        <Button className="bg-primary" onClick={() => setIsAddUserOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
           Add User
         </Button>
@@ -150,7 +171,16 @@ const Users = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.length > 0 ? (
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8">
+                      <div className="flex flex-col items-center justify-center text-muted-foreground">
+                        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mb-2"></div>
+                        <p>Loading users...</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : filteredUsers.length > 0 ? (
                   filteredUsers.map((user) => (
                     <TableRow key={user.id}>
                       <TableCell>
@@ -240,6 +270,13 @@ const Users = () => {
           );
         })}
       </div>
+
+      {/* Add User Form Dialog */}
+      <AddUserForm 
+        isOpen={isAddUserOpen} 
+        onClose={() => setIsAddUserOpen(false)} 
+        onSuccess={loadUsers}
+      />
     </div>
   );
 };

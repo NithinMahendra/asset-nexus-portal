@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { assets, getAssetsByCategory, getAssetsByStatus } from '@/services/mockData';
+import { getAllAssets } from '@/lib/supabase-utils';
 import { 
   Badge, 
   Card, 
@@ -49,6 +49,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import AddAssetForm from '@/components/assets/AddAssetForm';
 
 const statusColors: Record<AssetStatus, string> = {
   available: 'bg-status-available',
@@ -61,7 +62,27 @@ const AssetList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [filteredAssets, setFilteredAssets] = useState<Asset[]>(assets);
+  const [filteredAssets, setFilteredAssets] = useState<Asset[]>([]);
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAddAssetOpen, setIsAddAssetOpen] = useState(false);
+  
+  // Load assets from Supabase
+  useEffect(() => {
+    loadAssets();
+  }, []);
+
+  async function loadAssets() {
+    setIsLoading(true);
+    try {
+      const assetList = await getAllAssets();
+      setAssets(assetList);
+    } catch (error) {
+      console.error("Error loading assets:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }
   
   // Category options
   const categories: { value: string; label: string }[] = [
@@ -113,7 +134,7 @@ const AssetList = () => {
     }
     
     setFilteredAssets(result);
-  }, [searchTerm, statusFilter, categoryFilter]);
+  }, [searchTerm, statusFilter, categoryFilter, assets]);
   
   return (
     <div className="space-y-6 animate-fade-in">
@@ -124,7 +145,7 @@ const AssetList = () => {
             Manage and track all company assets
           </p>
         </div>
-        <Button className="bg-primary">
+        <Button className="bg-primary" onClick={() => setIsAddAssetOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
           Add Asset
         </Button>
@@ -201,7 +222,16 @@ const AssetList = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredAssets.length > 0 ? (
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8">
+                      <div className="flex flex-col items-center justify-center text-muted-foreground">
+                        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mb-2"></div>
+                        <p>Loading assets...</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : filteredAssets.length > 0 ? (
                   filteredAssets.map((asset) => (
                     <TableRow key={asset.id}>
                       <TableCell className="font-medium">
@@ -298,6 +328,13 @@ const AssetList = () => {
           );
         })}
       </div>
+
+      {/* Add Asset Form Dialog */}
+      <AddAssetForm 
+        isOpen={isAddAssetOpen} 
+        onClose={() => setIsAddAssetOpen(false)} 
+        onSuccess={loadAssets}
+      />
     </div>
   );
 };

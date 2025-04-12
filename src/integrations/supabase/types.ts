@@ -9,7 +9,146 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      asset_history: {
+        Row: {
+          action: string
+          asset_id: string
+          created_at: string
+          date: string
+          details: string | null
+          id: string
+          user_id: string | null
+          user_name: string
+        }
+        Insert: {
+          action: string
+          asset_id: string
+          created_at?: string
+          date?: string
+          details?: string | null
+          id?: string
+          user_id?: string | null
+          user_name: string
+        }
+        Update: {
+          action?: string
+          asset_id?: string
+          created_at?: string
+          date?: string
+          details?: string | null
+          id?: string
+          user_id?: string | null
+          user_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_history_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assets: {
+        Row: {
+          assigned_date: string | null
+          assigned_to: string | null
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          location: string | null
+          model: string | null
+          name: string
+          purchase_date: string
+          serial_number: string | null
+          status: string
+          value: number | null
+          warranty_expiry: string | null
+        }
+        Insert: {
+          assigned_date?: string | null
+          assigned_to?: string | null
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          location?: string | null
+          model?: string | null
+          name: string
+          purchase_date: string
+          serial_number?: string | null
+          status: string
+          value?: number | null
+          warranty_expiry?: string | null
+        }
+        Update: {
+          assigned_date?: string | null
+          assigned_to?: string | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          location?: string | null
+          model?: string | null
+          name?: string
+          purchase_date?: string
+          serial_number?: string | null
+          status?: string
+          value?: number | null
+          warranty_expiry?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assets_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      users: {
+        Row: {
+          created_at: string
+          department: string | null
+          email: string
+          id: string
+          name: string
+          phone: string | null
+          profile_image_url: string | null
+          role: string
+        }
+        Insert: {
+          created_at?: string
+          department?: string | null
+          email: string
+          id?: string
+          name: string
+          phone?: string | null
+          profile_image_url?: string | null
+          role: string
+        }
+        Update: {
+          created_at?: string
+          department?: string | null
+          email?: string
+          id?: string
+          name?: string
+          phone?: string | null
+          profile_image_url?: string | null
+          role?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
