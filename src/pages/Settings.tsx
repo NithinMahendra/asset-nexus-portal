@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -92,7 +93,7 @@ const SettingsPage = () => {
           </div>
           
           <div className="flex-1">
-            <TabsContent value="general" className="space-y-6 mt-0">
+            <TabsContent value="general" className="mt-0 space-y-6">
               <Card>
                 <CardHeader>
                   <CardTitle>General Settings</CardTitle>
@@ -170,8 +171,7 @@ const SettingsPage = () => {
               </Card>
             </TabsContent>
             
-            
-            <TabsContent value="company" className="space-y-6 mt-0">
+            <TabsContent value="company" className="mt-0 space-y-6">
               <Card>
                 <CardHeader>
                   <CardTitle>Company Information</CardTitle>

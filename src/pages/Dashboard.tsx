@@ -7,6 +7,8 @@ import { Package, Users, AlertTriangle, Check, Clock, TrendingUp } from 'lucide-
 import { AssetStatus } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { getAllAssets } from '@/lib/supabase-utils';
+import { getAllUsers } from '@/lib/supabase-utils';
 
 const statusColors: Record<AssetStatus, string> = {
   available: 'bg-status-available',
@@ -25,8 +27,98 @@ const statusTextColors: Record<AssetStatus, string> = {
 const Dashboard = () => {
   const [stats, setStats] = useState(getDashboardStats());
   const [categoryData, setCategoryData] = useState(getCategoryBreakdown());
+  const [recentAssets, setRecentAssets] = useState(
+    [...assets].sort((a, b) => new Date(b.purchaseDate).getTime() - new Date(a.purchaseDate).getTime()).slice(0, 5)
+  );
+  const [loading, setLoading] = useState(true);
 
-  // Mock data for status distribution chart
+  // Fetch live data from Supabase
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        
+        // Get assets and users from Supabase
+        const assetsData = await getAllAssets();
+        const usersData = await getAllUsers();
+        
+        if (assetsData && usersData) {
+          // Calculate new stats based on real data
+          const totalAssets = assetsData.length;
+          const availableAssets = assetsData.filter(asset => asset.status === 'available').length;
+          const assignedAssets = assetsData.filter(asset => asset.status === 'assigned').length;
+          const repairAssets = assetsData.filter(asset => asset.status === 'repair').length;
+          const retiredAssets = assetsData.filter(asset => asset.status === 'retired').length;
+          
+          // Calculate total value
+          const assetsValueTotal = assetsData.reduce((sum, asset) => sum + (asset.value || 0), 0);
+          
+          // Calculate recent assignments (last 30 days)
+          const thirtyDaysAgo = new Date();
+          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+          
+          const recentlyAssigned = assetsData.filter(asset => 
+            asset.assignedDate && new Date(asset.assignedDate) > thirtyDaysAgo
+          ).length;
+          
+          // Calculate expiring warranties
+          const today = new Date();
+          const thirtyDaysFromNow = new Date();
+          thirtyDaysFromNow.setDate(today.getDate() + 30);
+          
+          const warrantyExpiringCount = assetsData.filter(asset =>
+            asset.warrantyExpiry && 
+            new Date(asset.warrantyExpiry) > today && 
+            new Date(asset.warrantyExpiry) < thirtyDaysFromNow
+          ).length;
+          
+          // Update stats
+          setStats({
+            totalAssets,
+            availableAssets,
+            assignedAssets, 
+            repairAssets,
+            retiredAssets,
+            assetsValueTotal,
+            recentlyAssigned,
+            usersCount: usersData.length,
+            warrantyExpiringCount
+          });
+          
+          // Update recent assets
+          const sortedRecentAssets = [...assetsData]
+            .sort((a, b) => new Date(b.purchaseDate).getTime() - new Date(a.purchaseDate).getTime())
+            .slice(0, 5);
+          setRecentAssets(sortedRecentAssets);
+          
+          // Update category breakdown
+          const categories = {};
+          assetsData.forEach(asset => {
+            if (!categories[asset.category]) {
+              categories[asset.category] = 0;
+            }
+            categories[asset.category]++;
+          });
+          
+          const newCategoryData = Object.entries(categories).map(([category, count]) => ({
+            category,
+            count: count as number,
+            percentage: Math.round(((count as number) / totalAssets) * 100)
+          }));
+          
+          setCategoryData(newCategoryData);
+        }
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, []);
+
+  // Status distribution data for pie chart
   const statusData = [
     { name: 'Available', value: stats.availableAssets, color: '#10b981' },
     { name: 'Assigned', value: stats.assignedAssets, color: '#3b82f6' },
@@ -49,11 +141,6 @@ const Dashboard = () => {
     { name: 'Nov', assets: 15 },
     { name: 'Dec', assets: 4 },
   ];
-
-  // Recently added assets
-  const recentAssets = [...assets]
-    .sort((a, b) => new Date(b.purchaseDate).getTime() - new Date(a.purchaseDate).getTime())
-    .slice(0, 5);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -204,7 +291,7 @@ const Dashboard = () => {
                     <td className="py-3 px-4">{asset.name}</td>
                     <td className="py-3 px-4 capitalize">{asset.category}</td>
                     <td className="py-3 px-4">
-                      <Badge className={cn(statusColors[asset.status], "text-white")}>
+                      <Badge className={cn(statusColors[asset.status as AssetStatus], "text-white")}>
                         {asset.status}
                       </Badge>
                     </td>
