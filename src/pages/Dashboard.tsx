@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { getDashboardStats, getCategoryBreakdown, getAssetsByStatus, assets } from '@/services/mockData';
 import { BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import { Package, Users, AlertTriangle, Check, Clock, TrendingUp } from 'lucide-react';
-import { AssetStatus } from '@/types';
+import { AssetStatus, AssetCategory, CategoryBreakdown } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { getAllAssets } from '@/lib/supabase-utils';
@@ -100,8 +100,9 @@ const Dashboard = () => {
             categories[asset.category]++;
           });
           
+          // Fix: Cast the string category to AssetCategory type to satisfy TypeScript
           const newCategoryData = Object.entries(categories).map(([category, count]) => ({
-            category,
+            category: category as AssetCategory, // Type casting here
             count: count as number,
             percentage: Math.round(((count as number) / totalAssets) * 100)
           }));
