@@ -11,7 +11,9 @@ import {
   Package, 
   DollarSign,
   Users,
-  Loader2
+  Loader2,
+  Tool,
+  Activity
 } from 'lucide-react';
 import { 
   Select, 
@@ -21,10 +23,19 @@ import {
   SelectValue 
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { generateReport, fetchReportData, saveCustomReport } from '@/services/reportService';
-import { useToast } from "@/components/ui/use-toast";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
+import { generateReport, fetchReportData, saveCustomReport, getSavedReports } from '@/services/reportService';
 import { toast } from "sonner";
 import { useQuery } from '@tanstack/react-query';
+import { AssetStatus, AssetCategory } from '@/types';
+import { format } from 'date-fns';
 
 type ReportFormat = 'pdf' | 'excel' | 'csv';
 type DateRange = 'all' | 'year' | 'quarter' | 'month' | 'custom';
@@ -34,6 +45,8 @@ interface ReportOptions {
   format: ReportFormat;
   dateRange: DateRange;
   groupBy: GroupBy;
+  customStartDate?: string;
+  customEndDate?: string;
 }
 
 interface ReportTypeInfo {
@@ -60,6 +73,12 @@ const ReportsPage = () => {
     queryKey: ['report-data', reportType],
     queryFn: () => fetchReportData(reportType),
     enabled: !!reportType,
+  });
+
+  // Query for saved reports
+  const { data: savedReports = [] } = useQuery({
+    queryKey: ['saved-reports'],
+    queryFn: getSavedReports,
   });
 
   // Define all report types
@@ -92,7 +111,7 @@ const ReportsPage = () => {
       id: 'maintenance-history', 
       title: 'Maintenance History', 
       description: 'Repair and maintenance records',
-      icon: <FileText className="h-8 w-8" />
+      icon: <Tool className="h-8 w-8" />
     },
     { 
       id: 'category-breakdown', 
@@ -110,7 +129,7 @@ const ReportsPage = () => {
       id: 'activity-log', 
       title: 'Activity Log', 
       description: 'Recent changes and actions',
-      icon: <FileText className="h-8 w-8" />
+      icon: <Activity className="h-8 w-8" />
     },
   ];
   
@@ -145,6 +164,203 @@ const ReportsPage = () => {
     };
     
     await saveCustomReport(reportConfig);
+  };
+
+  // Render report data preview based on report type
+  const renderReportPreview = () => {
+    if (!reportData || reportData.length === 0) {
+      return (
+        <div className="border rounded-md p-4 mt-4 text-center">
+          <p className="text-sm text-muted-foreground">
+            No data available for selected report type.
+          </p>
+        </div>
+      );
+    }
+
+    switch (reportType) {
+      case 'asset-inventory':
+        return (
+          <div className="border rounded-md p-4 mt-4 overflow-auto">
+            <h3 className="font-medium mb-2">Preview: {reportData.length} assets found</h3>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Purchase Date</TableHead>
+                  <TableHead>Value</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {reportData.slice(0, 5).map((asset: any) => (
+                  <TableRow key={asset.id}>
+                    <TableCell>{asset.name}</TableCell>
+                    <TableCell>{asset.category}</TableCell>
+                    <TableCell>{asset.status}</TableCell>
+                    <TableCell>{asset.purchase_date}</TableCell>
+                    <TableCell>{asset.value ? `$${asset.value}` : 'N/A'}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            {reportData.length > 5 && (
+              <p className="text-sm text-muted-foreground mt-2 text-center">
+                Showing 5 of {reportData.length} assets. Generate the report to see all.
+              </p>
+            )}
+          </div>
+        );
+
+      case 'assigned-assets':
+        return (
+          <div className="border rounded-md p-4 mt-4 overflow-auto">
+            <h3 className="font-medium mb-2">Preview: {reportData.length} assigned assets found</h3>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Asset</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Assigned To</TableHead>
+                  <TableHead>Assigned Date</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {reportData.slice(0, 5).map((asset: any) => (
+                  <TableRow key={asset.id}>
+                    <TableCell>{asset.name}</TableCell>
+                    <TableCell>{asset.category}</TableCell>
+                    <TableCell>{asset.assigned_to?.name || 'N/A'}</TableCell>
+                    <TableCell>{asset.assigned_date || 'N/A'}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        );
+
+      case 'warranty-expiry':
+        return (
+          <div className="border rounded-md p-4 mt-4 overflow-auto">
+            <h3 className="font-medium mb-2">Preview: {reportData.length} assets with warranty information</h3>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Asset</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Warranty Expires</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {reportData.slice(0, 5).map((asset: any) => (
+                  <TableRow key={asset.id}>
+                    <TableCell>{asset.name}</TableCell>
+                    <TableCell>{asset.category}</TableCell>
+                    <TableCell>{asset.warranty_expiry}</TableCell>
+                    <TableCell>{asset.status}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        );
+
+      case 'category-breakdown':
+        return (
+          <div className="border rounded-md p-4 mt-4">
+            <h3 className="font-medium mb-2">Category Breakdown</h3>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Count</TableHead>
+                  <TableHead>Percentage</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {reportData.map((item: any) => (
+                  <TableRow key={item.category}>
+                    <TableCell>{item.category}</TableCell>
+                    <TableCell>{item.count}</TableCell>
+                    <TableCell>{item.percentage.toFixed(1)}%</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        );
+
+      case 'asset-utilization':
+        return (
+          <div className="border rounded-md p-4 mt-4">
+            <h3 className="font-medium mb-2">Asset Utilization Metrics</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+              <div className="p-3 bg-gray-50 rounded-md">
+                <p className="text-sm text-muted-foreground">Total Assets</p>
+                <p className="text-2xl font-bold">{reportData.total}</p>
+              </div>
+              <div className="p-3 bg-gray-50 rounded-md">
+                <p className="text-sm text-muted-foreground">Assigned</p>
+                <p className="text-2xl font-bold">{reportData.assigned}</p>
+              </div>
+              <div className="p-3 bg-gray-50 rounded-md">
+                <p className="text-sm text-muted-foreground">Available</p>
+                <p className="text-2xl font-bold">{reportData.available}</p>
+              </div>
+              <div className="p-3 bg-gray-50 rounded-md">
+                <p className="text-sm text-muted-foreground">In Repair</p>
+                <p className="text-2xl font-bold">{reportData.repair}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-3 bg-gray-50 rounded-md">
+                <p className="text-sm text-muted-foreground">Utilization Rate</p>
+                <p className="text-2xl font-bold">{reportData.utilizationRate.toFixed(1)}%</p>
+              </div>
+              <div className="p-3 bg-gray-50 rounded-md">
+                <p className="text-sm text-muted-foreground">Availability Rate</p>
+                <p className="text-2xl font-bold">{reportData.availabilityRate.toFixed(1)}%</p>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'activity-log':
+        return (
+          <div className="border rounded-md p-4 mt-4 overflow-auto">
+            <h3 className="font-medium mb-2">Recent Activity ({reportData.length} events)</h3>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Asset</TableHead>
+                  <TableHead>Action</TableHead>
+                  <TableHead>User</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {reportData.slice(0, 5).map((item: any) => (
+                  <TableRow key={item.id}>
+                    <TableCell>{format(new Date(item.date), 'MMM d, yyyy')}</TableCell>
+                    <TableCell>{item.asset?.name || 'N/A'}</TableCell>
+                    <TableCell>{item.action.replace('_', ' ')}</TableCell>
+                    <TableCell>{item.user_name}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        );
+
+      default:
+        return (
+          <div className="border rounded-md p-4 mt-4 text-center">
+            <p className="text-sm text-muted-foreground">Select report options above to preview data.</p>
+          </div>
+        );
+    }
   };
   
   return (
@@ -255,17 +471,8 @@ const ReportsPage = () => {
                   <div className="p-6 text-center text-red-500">
                     Error loading report data. Please try again.
                   </div>
-                ) : reportData && reportData.length > 0 ? (
-                  <div className="border rounded-md p-4 mt-4">
-                    <h3 className="font-medium mb-2">Preview: {reportData.length} records found</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Your report will include data based on the selected options.
-                    </p>
-                  </div>
                 ) : (
-                  <div className="border rounded-md p-4 mt-4 text-center">
-                    <p className="text-sm text-muted-foreground">No data available for selected report type.</p>
-                  </div>
+                  renderReportPreview()
                 )}
                 
                 <div className="flex justify-end">
@@ -386,6 +593,31 @@ const ReportsPage = () => {
               </div>
             </CardContent>
           </Card>
+          
+          {savedReports.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Saved Reports</CardTitle>
+                <CardDescription>Your previously saved report configurations</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {savedReports.map((report: any) => (
+                    <div key={report.id} className="border rounded-md p-4 hover:bg-gray-50 cursor-pointer">
+                      <h3 className="font-medium">{report.name}</h3>
+                      <p className="text-sm text-muted-foreground">{report.description}</p>
+                      <div className="flex justify-between items-center mt-3">
+                        <span className="text-xs text-muted-foreground">
+                          Created: {format(new Date(report.createdAt), 'MMM d, yyyy')}
+                        </span>
+                        <Button size="sm" variant="ghost">Run</Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
     </div>
