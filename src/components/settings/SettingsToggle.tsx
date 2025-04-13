@@ -11,6 +11,8 @@ interface SettingsToggleProps {
   onCheckedChange: (checked: boolean) => void;
   icon?: ReactNode;
   secondaryIcon?: ReactNode;
+  className?: string;
+  disabled?: boolean;
 }
 
 const SettingsToggle = ({
@@ -20,10 +22,12 @@ const SettingsToggle = ({
   checked,
   onCheckedChange,
   icon,
-  secondaryIcon
+  secondaryIcon,
+  className,
+  disabled = false
 }: SettingsToggleProps) => {
   return (
-    <div className="flex items-center justify-between space-x-4 border p-4 rounded-md">
+    <div className={`flex items-center justify-between space-x-4 border p-4 rounded-md ${className || ''}`}>
       <div className="space-y-0.5">
         <div className="flex items-center gap-2">
           {icon}
@@ -33,8 +37,12 @@ const SettingsToggle = ({
       </div>
       <div className="flex items-center space-x-2">
         {secondaryIcon && secondaryIcon}
-        <Switch id={id} checked={checked} onCheckedChange={onCheckedChange} />
-        {icon && !secondaryIcon && icon}
+        <Switch 
+          id={id} 
+          checked={checked} 
+          onCheckedChange={onCheckedChange} 
+          disabled={disabled}
+        />
       </div>
     </div>
   );

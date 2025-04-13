@@ -79,7 +79,7 @@ const DashboardPage = () => {
             categories[asset.category]++;
           });
           
-          // Cast the category to AssetCategory type
+          // Cast the category to AssetCategory type and create properly formatted category data
           const newCategoryData: CategoryBreakdown[] = Object.entries(categories).map(([category, count]) => ({
             category: category as AssetCategory,
             count: count,
@@ -96,10 +96,12 @@ const DashboardPage = () => {
             needsAttention: mockStats.repairAssets,
             utilization: Math.round((mockStats.assignedAssets / mockStats.totalAssets) * 100)
           });
+          
           setCategoryData(getCategoryBreakdown());
           
-          // Fix: Get properly formatted status data from mock service instead of trying to format assets directly
-          setStatusData(getAssetsByStatus());
+          // Get properly formatted status data from mock service
+          const mockStatusData = getAssetsByStatus();
+          setStatusData(mockStatusData);
         }
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
@@ -111,10 +113,12 @@ const DashboardPage = () => {
           needsAttention: mockStats.repairAssets,
           utilization: Math.round((mockStats.assignedAssets / mockStats.totalAssets) * 100)
         });
+        
         setCategoryData(getCategoryBreakdown());
         
-        // Fix: Get properly formatted status data from mock service instead of trying to format assets directly
-        setStatusData(getAssetsByStatus());
+        // Get properly formatted status data from mock service
+        const mockStatusData = getAssetsByStatus();
+        setStatusData(mockStatusData);
       }
     };
     

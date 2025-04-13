@@ -1,4 +1,3 @@
-
 import { 
   Asset, 
   AssetHistory, 
@@ -197,6 +196,7 @@ export const assets: Asset[] = [
     warrantyExpiry: '2026-12-01',
     location: 'Conference Room A',
     serialNumber: 'FUR-2021-001',
+    model: 'Large oval conference table with cable management',
     description: 'Large oval conference table with cable management',
     value: 2499,
   },
@@ -463,6 +463,23 @@ export const getCategoryBreakdown = (): CategoryBreakdown[] => {
   }));
 };
 
+// Function to get assets by status - Properly formatted for charts
+export const getAssetsByStatus = (): { name: string, value: number }[] => {
+  const statusCounts: Record<string, number> = {};
+  
+  assets.forEach(asset => {
+    if (!statusCounts[asset.status]) {
+      statusCounts[asset.status] = 0;
+    }
+    statusCounts[asset.status]++;
+  });
+  
+  return Object.entries(statusCounts).map(([name, value]) => ({
+    name,
+    value
+  }));
+};
+
 // Mock current user (for authentication simulation)
 export const currentUser: User = users[0]; // Admin user by default
 
@@ -479,8 +496,8 @@ export const getUserNotifications = (userId: string): Notification[] => {
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 };
 
-// Function to get assets by status
-export const getAssetsByStatus = (status: AssetStatus): Asset[] => {
+// Function to get assets by specific status
+export const getAssetsBySpecificStatus = (status: AssetStatus): Asset[] => {
   return assets.filter(asset => asset.status === status);
 };
 
