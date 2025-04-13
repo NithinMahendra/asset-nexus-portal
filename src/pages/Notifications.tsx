@@ -1,16 +1,44 @@
 
-import { useState } from 'react';
-import { getUserNotifications, currentUser } from '@/services/mockData';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { CheckCircle, AlertCircle, InfoIcon, AlertTriangle, Bell, CheckCheck } from 'lucide-react';
+import { CheckCircle, AlertCircle, InfoIcon, AlertTriangle, Bell, CheckCheck, Loader2 } from 'lucide-react';
 import { Notification } from '@/types';
 import { cn } from '@/lib/utils';
+import { fetchUserNotifications, markNotificationAsRead, markAllNotificationsAsRead } from '@/services/notificationService';
+import { currentUser } from '@/services/mockData';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 const NotificationsPage = () => {
-  const [notifications, setNotifications] = useState(getUserNotifications(currentUser.id));
   const [filter, setFilter] = useState<Notification['type'] | 'all'>('all');
+  const queryClient = useQueryClient();
+  
+  // Fetch notifications using React Query
+  const { 
+    data: notifications = [], 
+    isLoading, 
+    error 
+  } = useQuery({
+    queryKey: ['notifications', currentUser.id],
+    queryFn: () => fetchUserNotifications(currentUser.id),
+  });
+  
+  // Mark notification as read mutation
+  const markAsReadMutation = useMutation({
+    mutationFn: markNotificationAsRead,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications', currentUser.id] });
+    },
+  });
+  
+  // Mark all as read mutation
+  const markAllAsReadMutation = useMutation({
+    mutationFn: () => markAllNotificationsAsRead(currentUser.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications', currentUser.id] });
+    },
+  });
   
   const filteredNotifications = filter === 'all' 
     ? notifications 
@@ -44,17 +72,16 @@ const NotificationsPage = () => {
     }
   };
   
-  const markAllAsRead = () => {
-    setNotifications(
-      notifications.map(n => ({ ...n, read: true }))
-    );
+  const handleMarkAsRead = (id: string) => {
+    markAsReadMutation.mutate(id);
   };
   
-  const markAsRead = (id: string) => {
-    setNotifications(
-      notifications.map(n => n.id === id ? { ...n, read: true } : n)
-    );
+  const handleMarkAllAsRead = () => {
+    markAllAsReadMutation.mutate();
   };
+  
+  // Count of unread notifications
+  const unreadCount = notifications.filter(n => !n.read).length;
   
   return (
     <div className="space-y-6 animate-fade-in">
@@ -63,10 +90,23 @@ const NotificationsPage = () => {
           <h1 className="text-3xl font-bold tracking-tight">Notifications</h1>
           <p className="text-muted-foreground">
             View and manage your notifications
+            {unreadCount > 0 && (
+              <span className="ml-2 inline-flex items-center justify-center px-2 py-1 text-xs font-bold text-white bg-primary rounded-full">
+                {unreadCount} unread
+              </span>
+            )}
           </p>
         </div>
-        <Button variant="outline" onClick={markAllAsRead}>
-          <CheckCheck className="mr-2 h-4 w-4" />
+        <Button 
+          variant="outline" 
+          onClick={handleMarkAllAsRead}
+          disabled={markAllAsReadMutation.isPending || unreadCount === 0}
+        >
+          {markAllAsReadMutation.isPending ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <CheckCheck className="mr-2 h-4 w-4" />
+          )}
           Mark all as read
         </Button>
       </div>
@@ -122,7 +162,17 @@ const NotificationsPage = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {filteredNotifications.length > 0 ? (
+          {isLoading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : error ? (
+            <div className="text-center py-12 text-red-500">
+              <AlertCircle className="h-12 w-12 mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-1">Error loading notifications</h3>
+              <p>Please try again later</p>
+            </div>
+          ) : filteredNotifications.length > 0 ? (
             <div className="space-y-4">
               {filteredNotifications.map((notification) => (
                 <div 
@@ -155,10 +205,11 @@ const NotificationsPage = () => {
                         )}
                         {!notification.read && (
                           <button 
-                            onClick={() => markAsRead(notification.id)}
+                            onClick={() => handleMarkAsRead(notification.id)}
                             className="text-sm font-medium text-muted-foreground hover:text-foreground hover:underline"
+                            disabled={markAsReadMutation.isPending}
                           >
-                            Mark as read
+                            {markAsReadMutation.isPending ? 'Updating...' : 'Mark as read'}
                           </button>
                         )}
                       </div>
