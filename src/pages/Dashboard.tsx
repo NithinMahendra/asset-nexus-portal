@@ -97,7 +97,8 @@ const DashboardPage = () => {
             utilization: Math.round((mockStats.assignedAssets / mockStats.totalAssets) * 100)
           });
           setCategoryData(getCategoryBreakdown());
-          // Get properly formatted status data from mock service
+          
+          // Fix: Get properly formatted status data from mock service instead of trying to format assets directly
           setStatusData(getAssetsByStatus());
         }
       } catch (error) {
@@ -111,7 +112,8 @@ const DashboardPage = () => {
           utilization: Math.round((mockStats.assignedAssets / mockStats.totalAssets) * 100)
         });
         setCategoryData(getCategoryBreakdown());
-        // Get properly formatted status data from mock service
+        
+        // Fix: Get properly formatted status data from mock service instead of trying to format assets directly
         setStatusData(getAssetsByStatus());
       }
     };
