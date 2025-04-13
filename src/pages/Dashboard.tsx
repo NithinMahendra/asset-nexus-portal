@@ -96,6 +96,7 @@ const DashboardPage = () => {
             utilization: Math.round((mockStats.assignedAssets / mockStats.totalAssets) * 100)
           });
           setCategoryData(getCategoryBreakdown());
+          // Use the correct function to get status data in the expected format
           setStatusData(getAssetsByStatus());
         }
       } catch (error) {
@@ -109,6 +110,7 @@ const DashboardPage = () => {
           utilization: Math.round((mockStats.assignedAssets / mockStats.totalAssets) * 100)
         });
         setCategoryData(getCategoryBreakdown());
+        // Use the correct function to get status data in the expected format
         setStatusData(getAssetsByStatus());
       }
     };
