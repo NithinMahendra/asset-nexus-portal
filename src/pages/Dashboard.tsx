@@ -40,7 +40,8 @@ const DashboardPage = () => {
           // Calculate stats
           const totalAssets = realAssets.length;
           const assignedAssets = realAssets.filter(asset => asset.status === 'assigned').length;
-          const maintenanceAssets = realAssets.filter(asset => asset.status === 'maintenance').length;
+          // Fix: Change 'maintenance' to 'repair' to match AssetStatus type
+          const maintenanceAssets = realAssets.filter(asset => asset.status === 'repair').length;
           const utilization = Math.round((assignedAssets / totalAssets) * 100);
           
           setStats({
@@ -77,24 +78,36 @@ const DashboardPage = () => {
             categories[asset.category]++;
           });
           
-          // Fix: Cast the string category to AssetCategory type to satisfy TypeScript
-          const newCategoryData = Object.entries(categories).map(([category, count]) => ({
-            category: category as AssetCategory, // Type casting here
-            count: count as number,
-            percentage: Math.round(((count as number) / totalAssets) * 100)
+          // Fix: Properly cast the category to AssetCategory type
+          const newCategoryData: CategoryBreakdown[] = Object.entries(categories).map(([category, count]) => ({
+            category: category as AssetCategory,
+            count: count,
+            percentage: Math.round((count / totalAssets) * 100)
           }));
           
           setCategoryData(newCategoryData);
         } else {
           // If no real data, fall back to mock data
-          setStats(getDashboardStats());
+          const mockStats = getDashboardStats();
+          setStats({
+            totalAssets: mockStats.totalAssets,
+            totalUsers: mockStats.usersCount,
+            needsAttention: mockStats.repairAssets,
+            utilization: Math.round((mockStats.assignedAssets / mockStats.totalAssets) * 100)
+          });
           setCategoryData(getCategoryBreakdown());
           setStatusData(getAssetsByStatus());
         }
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
         // Fall back to mock data on error
-        setStats(getDashboardStats());
+        const mockStats = getDashboardStats();
+        setStats({
+          totalAssets: mockStats.totalAssets,
+          totalUsers: mockStats.usersCount,
+          needsAttention: mockStats.repairAssets,
+          utilization: Math.round((mockStats.assignedAssets / mockStats.totalAssets) * 100)
+        });
         setCategoryData(getCategoryBreakdown());
         setStatusData(getAssetsByStatus());
       }
@@ -152,7 +165,7 @@ const DashboardPage = () => {
       </div>
       
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
-        {/* New Monthly Acquisition Chart */}
+        {/* Monthly Acquisition Chart */}
         <MonthlyAcquisitionChart />
         
         <Card className="col-span-3 lg:col-span-1">
