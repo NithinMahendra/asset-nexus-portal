@@ -15,7 +15,7 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#FF6B6B'
 const statusColors = {
   available: 'bg-green-500',
   assigned: 'bg-blue-500',
-  maintenance: 'bg-yellow-500',
+  repair: 'bg-yellow-500',
   retired: 'bg-gray-500',
   lost: 'bg-red-500',
 };
@@ -40,7 +40,7 @@ const DashboardPage = () => {
           // Calculate stats
           const totalAssets = realAssets.length;
           const assignedAssets = realAssets.filter(asset => asset.status === 'assigned').length;
-          // Fix: Change 'maintenance' to 'repair' to match AssetStatus type
+          // Use 'repair' status to match AssetStatus type
           const maintenanceAssets = realAssets.filter(asset => asset.status === 'repair').length;
           const utilization = Math.round((assignedAssets / totalAssets) * 100);
           
@@ -61,12 +61,13 @@ const DashboardPage = () => {
             statusCounts[asset.status]++;
           });
           
-          const newStatusData = Object.entries(statusCounts).map(([name, value]) => ({
+          // Transform to the required format for the chart
+          const formattedStatusData = Object.entries(statusCounts).map(([name, value]) => ({
             name,
             value
           }));
           
-          setStatusData(newStatusData);
+          setStatusData(formattedStatusData);
           
           // Calculate category breakdown
           const categories: Record<string, number> = {};
@@ -78,7 +79,7 @@ const DashboardPage = () => {
             categories[asset.category]++;
           });
           
-          // Fix: Properly cast the category to AssetCategory type
+          // Cast the category to AssetCategory type
           const newCategoryData: CategoryBreakdown[] = Object.entries(categories).map(([category, count]) => ({
             category: category as AssetCategory,
             count: count,
@@ -96,7 +97,7 @@ const DashboardPage = () => {
             utilization: Math.round((mockStats.assignedAssets / mockStats.totalAssets) * 100)
           });
           setCategoryData(getCategoryBreakdown());
-          // Use the correct function to get status data in the expected format
+          // Get properly formatted status data from mock service
           setStatusData(getAssetsByStatus());
         }
       } catch (error) {
@@ -110,7 +111,7 @@ const DashboardPage = () => {
           utilization: Math.round((mockStats.assignedAssets / mockStats.totalAssets) * 100)
         });
         setCategoryData(getCategoryBreakdown());
-        // Use the correct function to get status data in the expected format
+        // Get properly formatted status data from mock service
         setStatusData(getAssetsByStatus());
       }
     };
