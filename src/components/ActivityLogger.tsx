@@ -19,14 +19,16 @@ export const useActivityLogger = () => {
     if (!user) return null;
     
     try {
+      // Use the asset_history table instead of activity_logs
       const { data: logEntry, error } = await supabase
-        .from('activity_logs')
+        .from('asset_history')
         .insert({
           user_id: user.id,
+          user_name: user.user_metadata?.name || user.email || 'Unknown user',
           action: data.action,
           details: data.details,
-          entity_type: data.entity_type,
-          entity_id: data.entity_id,
+          asset_id: data.entity_id || '00000000-0000-0000-0000-000000000000', // Using a dummy UUID if no entity_id
+          date: new Date().toISOString()
         })
         .select()
         .single();
