@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,7 +11,7 @@ import {
   DollarSign,
   Users,
   Loader2,
-  Tool,
+  Wrench, // Replaced Tool with Wrench
   Activity
 } from 'lucide-react';
 import { 
@@ -111,7 +110,7 @@ const ReportsPage = () => {
       id: 'maintenance-history', 
       title: 'Maintenance History', 
       description: 'Repair and maintenance records',
-      icon: <Tool className="h-8 w-8" />
+      icon: <Wrench className="h-8 w-8" /> // Updated icon here too
     },
     { 
       id: 'category-breakdown', 
