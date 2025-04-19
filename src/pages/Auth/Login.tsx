@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -46,14 +47,23 @@ const LoginPage = () => {
 
       if (authData.user) {
         const isAdmin = await checkAdminRole(authData.user.id);
-        if (!isAdmin) {
+        
+        if (isAdmin) {
+          toast({
+            title: "Login successful",
+            description: "Welcome back, admin!",
+          });
+        } else {
+          toast({
+            title: "Access denied",
+            description: "Admin privileges required.",
+            variant: "destructive",
+          });
+          
+          // Sign out the user if they're not an admin
+          await supabase.auth.signOut();
           throw new Error("Access denied. Admin privileges required.");
         }
-
-        toast({
-          title: "Login successful",
-          description: "Welcome back, admin!",
-        });
         
         navigate("/");
       }
