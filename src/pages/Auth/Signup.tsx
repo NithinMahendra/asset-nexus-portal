@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -49,9 +48,7 @@ const SignupPage = () => {
         options: {
           data: {
             name: data.name,
-            role: 'admin', // Default role for new users
           },
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       });
 
@@ -60,8 +57,8 @@ const SignupPage = () => {
       }
 
       toast({
-        title: "Registration successful",
-        description: "Please check your email to verify your account",
+        title: "Registration pending",
+        description: "Your admin account request has been submitted for review.",
       });
       
       navigate("/auth/login");

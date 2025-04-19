@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -11,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "@/components/ui/use-toast";
+import { checkAdminRole } from "@/lib/auth-utils";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -35,7 +35,7 @@ const LoginPage = () => {
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data: authData, error } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,
       });
@@ -44,12 +44,19 @@ const LoginPage = () => {
         throw error;
       }
 
-      toast({
-        title: "Login successful",
-        description: "You have been logged in successfully",
-      });
-      
-      navigate("/");
+      if (authData.user) {
+        const isAdmin = await checkAdminRole(authData.user.id);
+        if (!isAdmin) {
+          throw new Error("Access denied. Admin privileges required.");
+        }
+
+        toast({
+          title: "Login successful",
+          description: "Welcome back, admin!",
+        });
+        
+        navigate("/");
+      }
     } catch (error: any) {
       toast({
         title: "Login failed",
