@@ -1,9 +1,10 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
-import { checkAdminRole, getUserRole, UserRole } from "@/lib/auth-utils";
+import { checkAdminRole, getUserRole } from "@/lib/auth-utils";
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AuthChangeEvent, Session, User } from '@supabase/supabase-js';
+import { UserRole } from "@/types";
 
 interface AuthContextType {
   user: User | null;

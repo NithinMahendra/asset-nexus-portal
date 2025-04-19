@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { useAuth } from '@/providers/AuthProvider';
-import { UserRole, hasRolePermission } from '@/lib/auth-utils';
+import { UserRole } from '@/types';
+import { hasRolePermission } from '@/lib/auth-utils';
 
 interface RoleBasedAccessProps {
   allowedRoles: UserRole[];
