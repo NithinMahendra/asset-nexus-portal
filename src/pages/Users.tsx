@@ -48,15 +48,15 @@ import { cn } from '@/lib/utils';
 import AddUserForm from '@/components/users/AddUserForm';
 
 const roleColors: Record<UserRole, string> = {
-  admin: 'bg-red-500',
-  manager: 'bg-amber-500',
-  employee: 'bg-blue-500'
+  super_admin: 'bg-red-500',
+  admin: 'bg-amber-500',
+  viewer: 'bg-blue-500'
 };
 
 const roleTextColors: Record<UserRole, string> = {
-  admin: 'text-red-500',
-  manager: 'text-amber-500',
-  employee: 'text-blue-500'
+  super_admin: 'text-red-500',
+  admin: 'text-amber-500',
+  viewer: 'text-blue-500'
 };
 
 const Users = () => {
@@ -148,9 +148,9 @@ const Users = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Roles</SelectItem>
+              <SelectItem value="super_admin">Super Admin</SelectItem>
               <SelectItem value="admin">Admin</SelectItem>
-              <SelectItem value="manager">Manager</SelectItem>
-              <SelectItem value="employee">Employee</SelectItem>
+              <SelectItem value="viewer">Viewer</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -250,9 +250,9 @@ const Users = () => {
       {/* Role Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[
+          { role: 'super_admin', icon: <Shield className="h-5 w-5" />, label: 'Super Admins' },
           { role: 'admin', icon: <Shield className="h-5 w-5" />, label: 'Admins' },
-          { role: 'manager', icon: <Building2 className="h-5 w-5" />, label: 'Managers' },
-          { role: 'employee', icon: <UserPlus className="h-5 w-5" />, label: 'Employees' },
+          { role: 'viewer', icon: <UserPlus className="h-5 w-5" />, label: 'Viewers' },
         ].map((item) => {
           const count = users.filter(u => u.role === item.role).length;
           return (

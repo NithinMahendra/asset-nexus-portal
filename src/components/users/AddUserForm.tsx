@@ -38,7 +38,7 @@ const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
   phone: z.string().optional(),
   department: z.string().optional(),
-  role: z.enum(["admin", "manager", "employee"]),
+  role: z.enum(["super_admin", "admin", "viewer"]),
   profileImageUrl: z.string().url({ message: "Please enter a valid URL" }).optional()
 });
 
@@ -61,7 +61,7 @@ export default function AddUserForm({ isOpen, onClose, onSuccess }: AddUserFormP
       email: "",
       phone: "",
       department: "",
-      role: "employee",
+      role: "viewer",
       profileImageUrl: ""
     }
   });
@@ -181,9 +181,9 @@ export default function AddUserForm({ isOpen, onClose, onSuccess }: AddUserFormP
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
+                      <SelectItem value="super_admin">Super Admin</SelectItem>
                       <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="manager">Manager</SelectItem>
-                      <SelectItem value="employee">Employee</SelectItem>
+                      <SelectItem value="viewer">Viewer</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

@@ -1,3 +1,4 @@
+
 import { 
   Asset, 
   AssetHistory, 
@@ -17,7 +18,7 @@ export const users: User[] = [
     email: 'john@nexusassets.com',
     phone: '123-456-7890',
     department: 'IT',
-    role: 'admin',
+    role: 'super_admin',
     profileImageUrl: '/placeholder.svg',
   },
   {
@@ -26,7 +27,7 @@ export const users: User[] = [
     email: 'sarah@nexusassets.com',
     phone: '123-456-7891',
     department: 'Operations',
-    role: 'manager',
+    role: 'admin',
     profileImageUrl: '/placeholder.svg',
   },
   {
@@ -35,7 +36,7 @@ export const users: User[] = [
     email: 'mark@nexusassets.com',
     phone: '123-456-7892',
     department: 'Marketing',
-    role: 'employee',
+    role: 'viewer',
     profileImageUrl: '/placeholder.svg',
   },
   {
@@ -44,7 +45,7 @@ export const users: User[] = [
     email: 'lisa@nexusassets.com',
     phone: '123-456-7893',
     department: 'Sales',
-    role: 'employee',
+    role: 'viewer',
     profileImageUrl: '/placeholder.svg',
   },
   {
@@ -53,7 +54,7 @@ export const users: User[] = [
     email: 'alex@nexusassets.com',
     phone: '123-456-7894',
     department: 'Finance',
-    role: 'manager',
+    role: 'admin',
     profileImageUrl: '/placeholder.svg',
   },
 ];

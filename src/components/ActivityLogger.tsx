@@ -6,7 +6,7 @@ import { useAuth } from '@/providers/AuthProvider';
 interface ActivityLogData {
   action: string;
   details?: string;
-  entity_type: string;
+  entity_type?: string;
   entity_id?: string;
 }
 
