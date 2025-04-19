@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { checkAdminRole } from "@/lib/auth-utils";
 import { useNavigate, useLocation } from 'react-router-dom';
+import { AuthChangeEvent } from '@supabase/supabase-js';
 
 interface AuthContextType {
   isAdmin: boolean;
@@ -62,7 +63,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setIsAdmin(adminStatus);
         
         // Don't redirect on signup
-        if (event === 'SIGNED_UP') {
+        if (event === 'SIGNED_UP' as AuthChangeEvent) {
           return;
         }
         
