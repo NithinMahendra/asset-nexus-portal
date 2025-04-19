@@ -2,7 +2,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { checkAdminRole } from "@/lib/auth-utils";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 interface AuthContextType {
   isAdmin: boolean;
@@ -17,6 +17,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -26,16 +27,30 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (session?.user) {
           const adminStatus = await checkAdminRole(session.user.id);
           setIsAdmin(adminStatus);
-          if (!adminStatus) {
+          
+          // Only redirect if not on auth pages and not admin
+          const isAuthPage = location.pathname.startsWith('/auth');
+          if (!adminStatus && !isAuthPage) {
             navigate('/auth/login');
           }
         } else {
           setIsAdmin(false);
-          navigate('/auth/login');
+          
+          // Only redirect if not on auth pages
+          const isAuthPage = location.pathname.startsWith('/auth');
+          if (!isAuthPage) {
+            navigate('/auth/login');
+          }
         }
       } catch (error) {
         console.error('Auth error:', error);
-        navigate('/auth/login');
+        setIsAdmin(false);
+        
+        // Only redirect if not on auth pages
+        const isAuthPage = location.pathname.startsWith('/auth');
+        if (!isAuthPage) {
+          navigate('/auth/login');
+        }
       } finally {
         setIsLoading(false);
       }
@@ -45,18 +60,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (session?.user) {
         const adminStatus = await checkAdminRole(session.user.id);
         setIsAdmin(adminStatus);
-        if (!adminStatus) {
+        
+        // Don't redirect on signup
+        if (event === 'SIGNED_UP') {
+          return;
+        }
+        
+        // Only redirect if not on auth pages and not admin
+        const isAuthPage = location.pathname.startsWith('/auth');
+        if (!adminStatus && !isAuthPage) {
           navigate('/auth/login');
         }
       } else {
         setIsAdmin(false);
-        navigate('/auth/login');
+        
+        // Only redirect if not on auth pages
+        const isAuthPage = location.pathname.startsWith('/auth');
+        if (!isAuthPage) {
+          navigate('/auth/login');
+        }
       }
     });
 
     checkAuth();
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, location.pathname]);
 
   return (
     <AuthContext.Provider value={{ isAdmin, isLoading }}>
