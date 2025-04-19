@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "@/components/ui/use-toast";
-import { checkAdminRole } from "@/lib/auth-utils";
+import { getUserRole } from "@/lib/auth-utils";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -46,26 +46,25 @@ const LoginPage = () => {
       }
 
       if (authData.user) {
-        const isAdmin = await checkAdminRole(authData.user.id);
+        const userRole = await getUserRole(authData.user.id);
         
-        if (isAdmin) {
+        if (userRole) {
           toast({
             title: "Login successful",
-            description: "Welcome back, admin!",
+            description: `Welcome back, ${userRole}!`,
           });
+          navigate("/");
         } else {
           toast({
             title: "Access denied",
-            description: "Admin privileges required.",
+            description: "No role assigned. Please contact an administrator.",
             variant: "destructive",
           });
           
-          // Sign out the user if they're not an admin
+          // Sign out the user if they don't have a role
           await supabase.auth.signOut();
-          throw new Error("Access denied. Admin privileges required.");
+          throw new Error("Access denied. No role assigned.");
         }
-        
-        navigate("/");
       }
     } catch (error: any) {
       toast({
