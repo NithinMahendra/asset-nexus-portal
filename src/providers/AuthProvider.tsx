@@ -5,6 +5,7 @@ import { checkAdminRole, getUserRole } from "@/lib/auth-utils";
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AuthChangeEvent, Session, User } from '@supabase/supabase-js';
 import { UserRole } from "@/types";
+import { toast } from "@/components/ui/use-toast";
 
 interface AuthContextType {
   user: User | null;
@@ -36,18 +37,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        setIsLoading(true);
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session?.user) {
           setUser(session.user);
           setSession(session);
           
-          // Get user role
-          const role = await getUserRole(session.user.id);
-          setUserRole(role);
+          // Get user role in parallel
+          const rolePromise = getUserRole(session.user.id);
+          const adminStatusPromise = checkAdminRole(session.user.id);
           
-          // Check if user is an admin
-          const adminStatus = await checkAdminRole(session.user.id);
+          const [role, adminStatus] = await Promise.all([rolePromise, adminStatusPromise]);
+          
+          setUserRole(role);
           setIsAdmin(adminStatus);
           
           // Only redirect if not on auth pages and not authenticated with appropriate role
@@ -69,6 +72,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
       } catch (error) {
         console.error('Auth error:', error);
+        toast({
+          title: "Authentication Error",
+          description: "There was a problem with authentication. Please try again.",
+          variant: "destructive",
+        });
+        
         setUser(null);
         setSession(null);
         setIsAdmin(false);
@@ -84,7 +93,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const handleAuthChange = async (event: AuthChangeEvent, session: Session | null) => {
       if (session?.user) {
         setUser(session.user);
         setSession(session);
@@ -119,7 +128,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           navigate('/auth/login');
         }
       }
-    });
+    };
+
+    // Set up the subscription
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        // Use setTimeout to prevent potential deadlocks
+        setTimeout(() => handleAuthChange(event, session), 0);
+      }
+    );
 
     checkAuth();
     return () => subscription.unsubscribe();

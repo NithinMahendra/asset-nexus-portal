@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -30,6 +30,7 @@ const SignupPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const navigate = useNavigate();
 
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
@@ -44,7 +45,27 @@ const SignupPage = () => {
   const onSubmit = async (data: SignupFormValues) => {
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signUp({
+      // Check if user already exists to provide faster feedback
+      const { data: existingUsers, error: checkError } = await supabase
+        .from('users')
+        .select('email')
+        .eq('email', data.email)
+        .maybeSingle();
+
+      if (checkError) {
+        console.error("Error checking existing user:", checkError);
+      } else if (existingUsers) {
+        toast({
+          title: "Account already exists",
+          description: "An account with this email already exists. Please log in instead.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      // Proceed with signup
+      const { error, data: authData } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
@@ -58,19 +79,59 @@ const SignupPage = () => {
         throw error;
       }
 
-      toast({
-        title: "Registration pending",
-        description: "Your admin account request has been submitted for review.",
-      });
-      
-      setRegistrationSuccess(true);
-      
-      // Clear form
-      form.reset();
+      if (authData?.user) {
+        // Add user to the user_roles table with 'viewer' role
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .insert({
+            user_id: authData.user.id,
+            role: 'viewer'
+          });
+
+        if (roleError) {
+          console.error("Error setting user role:", roleError);
+        }
+
+        toast({
+          title: "Account created successfully",
+          description: "You can now login with your credentials.",
+        });
+        
+        setRegistrationSuccess(true);
+        
+        // Clear form
+        form.reset();
+        
+        // Auto-redirect to login after 2 seconds
+        setTimeout(() => {
+          navigate('/auth/login');
+        }, 2000);
+      } else {
+        // Handle case where user was not created
+        toast({
+          title: "Registration pending",
+          description: "Your account request has been submitted. Please check your email to confirm your registration.",
+        });
+        setRegistrationSuccess(true);
+        form.reset();
+      }
     } catch (error: any) {
+      console.error("Signup error:", error);
+      
+      // Improved error handling with specific messages
+      let errorMessage = "An error occurred during signup";
+      
+      if (error.message.includes("already registered")) {
+        errorMessage = "Email already registered. Please try logging in instead.";
+      } else if (error.message.includes("email")) {
+        errorMessage = "Invalid email format";
+      } else if (error.message.includes("password")) {
+        errorMessage = "Password issue: " + error.message;
+      }
+      
       toast({
         title: "Registration failed",
-        description: error.message || "An error occurred during signup",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -92,9 +153,7 @@ const SignupPage = () => {
             <Alert className="mb-4">
               <AlertTitle>Registration successful!</AlertTitle>
               <AlertDescription>
-                Your admin account request has been submitted. Please contact the system administrator to approve 
-                your admin privileges. You can now proceed to login, but you'll need admin approval to access
-                the admin dashboard.
+                Your account has been created successfully. You will be redirected to the login page.
               </AlertDescription>
               <div className="mt-4">
                 <Button asChild className="w-full">
@@ -220,7 +279,14 @@ const SignupPage = () => {
                   )}
                 />
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Creating account..." : "Sign up"}
+                  {isLoading ? (
+                    <>
+                      <span className="mr-2">Creating account...</span>
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
+                    </>
+                  ) : (
+                    "Sign up"
+                  )}
                 </Button>
               </form>
             </Form>
