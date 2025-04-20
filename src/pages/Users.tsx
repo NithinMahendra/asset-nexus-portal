@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -48,13 +47,11 @@ import { cn } from '@/lib/utils';
 import AddUserForm from '@/components/users/AddUserForm';
 
 const roleColors: Record<UserRole, string> = {
-  super_admin: 'bg-red-500',
   admin: 'bg-amber-500',
   viewer: 'bg-blue-500'
 };
 
 const roleTextColors: Record<UserRole, string> = {
-  super_admin: 'text-red-500',
   admin: 'text-amber-500',
   viewer: 'text-blue-500'
 };
@@ -148,7 +145,6 @@ const Users = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Roles</SelectItem>
-              <SelectItem value="super_admin">Super Admin</SelectItem>
               <SelectItem value="admin">Admin</SelectItem>
               <SelectItem value="viewer">Viewer</SelectItem>
             </SelectContent>
@@ -248,9 +244,8 @@ const Users = () => {
       </Card>
       
       {/* Role Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {[
-          { role: 'super_admin', icon: <Shield className="h-5 w-5" />, label: 'Super Admins' },
           { role: 'admin', icon: <Shield className="h-5 w-5" />, label: 'Admins' },
           { role: 'viewer', icon: <UserPlus className="h-5 w-5" />, label: 'Viewers' },
         ].map((item) => {
