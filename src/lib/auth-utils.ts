@@ -40,7 +40,7 @@ export const hasRolePermission = (userRole: UserRole | null, requiredRole: UserR
   
   const roleHierarchy: Record<UserRole, number> = {
     'admin': 2,
-    'viewer': 1
+    'employee': 1
   };
   
   return roleHierarchy[userRole] >= roleHierarchy[requiredRole];

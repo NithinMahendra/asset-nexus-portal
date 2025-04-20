@@ -80,12 +80,13 @@ const SignupPage = () => {
       }
 
       if (authData?.user) {
-        // Add user to the user_roles table with 'viewer' role
+        // Add user to the user_roles table with 'employee' role
+        // Changed from 'viewer' to 'employee' to match the database schema
         const { error: roleError } = await supabase
           .from('user_roles')
           .insert({
             user_id: authData.user.id,
-            role: 'viewer'
+            role: 'employee'
           });
 
         if (roleError) {
