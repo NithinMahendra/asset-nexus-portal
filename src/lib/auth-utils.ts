@@ -46,4 +46,3 @@ export const hasRolePermission = (userRole: UserRole | null, requiredRole: UserR
   
   return roleHierarchy[userRole] >= roleHierarchy[requiredRole];
 };
-

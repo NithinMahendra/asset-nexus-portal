@@ -1,5 +1,5 @@
 
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { 
   LayoutDashboard, 
@@ -21,6 +21,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   
   const navigationItems = [
     { name: 'Dashboard', path: '/', icon: <LayoutDashboard className="h-5 w-5" /> },
@@ -30,6 +31,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
     { name: 'Reports', path: '/reports', icon: <FileText className="h-5 w-5" /> },
     { name: 'Settings', path: '/settings', icon: <Settings className="h-5 w-5" /> },
   ];
+
+  const handleLogout = () => {
+    navigate('/logout');
+  };
 
   return (
     <div 
@@ -83,16 +88,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
       </div>
       
       <div className="p-4 border-t border-sidebar-border">
-        <Link
-          to="/logout"
+        <button
+          onClick={handleLogout}
           className={cn(
-            "flex items-center px-3 py-2 rounded-md text-sidebar-foreground hover:bg-sidebar-accent transition-all",
+            "flex items-center px-3 py-2 rounded-md text-sidebar-foreground hover:bg-sidebar-accent transition-all w-full",
             !isOpen && "justify-center"
           )}
         >
           <LogOut className="h-5 w-5" />
           {isOpen && <span className="ml-3">Logout</span>}
-        </Link>
+        </button>
       </div>
     </div>
   );

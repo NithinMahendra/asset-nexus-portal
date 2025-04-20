@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -14,6 +15,7 @@ import NotFound from "@/pages/NotFound";
 import LoginPage from "@/pages/Auth/Login";
 import SignupPage from "@/pages/Auth/Signup";
 import AuthCallback from "@/pages/Auth/AuthCallback";
+import Logout from "@/pages/Auth/Logout";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { AuthProvider } from "@/providers/AuthProvider";
 
@@ -32,6 +34,7 @@ const App = () => (
               <Route path="/auth/login" element={<LoginPage />} />
               <Route path="/auth/signup" element={<SignupPage />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
+              <Route path="/logout" element={<Logout />} />
               
               {/* Protected Routes */}
               <Route path="/" element={<MainLayout><Dashboard /></MainLayout>} />
