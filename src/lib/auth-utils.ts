@@ -1,6 +1,6 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { UserRole } from "@/types";
+import { UserRole } from '@/types';
+import { supabase } from '@/integrations/supabase/client';
 
 // Check if user has admin role (either admin or super_admin)
 export const checkAdminRole = async (userId: string): Promise<boolean> => {
@@ -46,3 +46,4 @@ export const hasRolePermission = (userRole: UserRole | null, requiredRole: UserR
   
   return roleHierarchy[userRole] >= roleHierarchy[requiredRole];
 };
+

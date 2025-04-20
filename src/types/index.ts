@@ -1,4 +1,3 @@
-
 export type UserRole = 'super_admin' | 'admin' | 'viewer';
 
 export interface User {
