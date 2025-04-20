@@ -2,6 +2,7 @@
 import { Notification } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { getUserNotifications } from "@/services/mockData";
 
 // Function to fetch user notifications from Supabase
 export const fetchUserNotifications = async (userId: string): Promise<Notification[]> => {
@@ -21,8 +22,7 @@ export const fetchUserNotifications = async (userId: string): Promise<Notificati
     return data;
     */
     
-    // Import mock data
-    const { getUserNotifications } = await import('@/services/mockData');
+    // Return mock data
     return getUserNotifications(userId);
   } catch (error) {
     console.error('Error fetching notifications:', error);
