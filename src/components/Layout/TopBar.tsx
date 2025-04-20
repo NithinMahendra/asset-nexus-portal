@@ -1,8 +1,8 @@
 
 import React, { useState } from 'react';
-import { Menu, Bell, Search } from 'lucide-react';
+import { Menu, Bell, UserRound } from 'lucide-react';
 import { getUserNotifications } from '@/services/mockData';
-import { User, Notification } from '@/types';
+import { Notification } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -14,17 +14,18 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
+import { useAuth } from '@/providers/AuthProvider';
 
 interface TopBarProps {
   toggleSidebar: () => void;
-  user: User;
 }
 
-const TopBar: React.FC<TopBarProps> = ({ toggleSidebar, user }) => {
+const TopBar: React.FC<TopBarProps> = ({ toggleSidebar }) => {
+  const { user } = useAuth();
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   
   // Get user notifications
-  const notifications = getUserNotifications(user.id);
+  const notifications = user ? getUserNotifications(user.id) : [];
   const unreadCount = notifications.filter(n => !n.read).length;
   
   const toggleNotifications = () => setIsNotificationsOpen(!isNotificationsOpen);
@@ -45,6 +46,10 @@ const TopBar: React.FC<TopBarProps> = ({ toggleSidebar, user }) => {
       default: return 'bg-blue-500';
     }
   };
+
+  if (!user) return null;
+
+  const userName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
 
   return (
     <header className="bg-white dark:bg-gray-900 border-b border-border">
@@ -127,31 +132,33 @@ const TopBar: React.FC<TopBarProps> = ({ toggleSidebar, user }) => {
           {/* User dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="flex items-center">
+              <button className="flex items-center space-x-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full p-2">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={user.profileImageUrl} alt={user.name} />
-                  <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                  <AvatarImage src={user.user_metadata?.avatar_url} alt={userName} />
+                  <AvatarFallback>{getInitials(userName)}</AvatarFallback>
                 </Avatar>
-                <span className="ml-2 text-sm font-medium hidden md:inline-block">{user.name}</span>
+                <span className="text-sm font-medium hidden md:inline-block">{userName}</span>
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>
                 <div className="flex flex-col space-y-1">
-                  <p>{user.name}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{user.email}</p>
+                  <p className="font-medium">{userName}</p>
+                  <p className="text-xs text-muted-foreground">{user.email}</p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <Link to="/profile" className="w-full">Profile</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Link to="/settings" className="w-full">Settings</Link>
+              <DropdownMenuItem asChild>
+                <Link to="/profile" className="cursor-pointer">
+                  <UserRound className="mr-2 h-4 w-4" />
+                  <span>Profile</span>
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <Link to="/logout" className="w-full">Logout</Link>
+              <DropdownMenuItem asChild>
+                <Link to="/logout" className="cursor-pointer text-destructive">
+                  Logout
+                </Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

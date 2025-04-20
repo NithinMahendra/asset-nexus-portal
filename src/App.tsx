@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,6 +17,7 @@ import AuthCallback from "@/pages/Auth/AuthCallback";
 import Logout from "@/pages/Auth/Logout";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { AuthProvider } from "@/providers/AuthProvider";
+import Profile from "@/pages/Profile";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +43,7 @@ const App = () => (
               <Route path="/notifications" element={<MainLayout><Notifications /></MainLayout>} />
               <Route path="/reports" element={<MainLayout><Reports /></MainLayout>} />
               <Route path="/settings" element={<MainLayout><Settings /></MainLayout>} />
+              <Route path="/profile" element={<MainLayout><Profile /></MainLayout>} />
               
               {/* Catch-all route */}
               <Route path="*" element={<NotFound />} />
