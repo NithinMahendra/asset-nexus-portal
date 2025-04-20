@@ -48,12 +48,12 @@ import AddUserForm from '@/components/users/AddUserForm';
 
 const roleColors: Record<UserRole, string> = {
   admin: 'bg-amber-500',
-  viewer: 'bg-blue-500'
+  employee: 'bg-blue-500'
 };
 
 const roleTextColors: Record<UserRole, string> = {
   admin: 'text-amber-500',
-  viewer: 'text-blue-500'
+  employee: 'text-blue-500'
 };
 
 const Users = () => {
@@ -146,7 +146,7 @@ const Users = () => {
             <SelectContent>
               <SelectItem value="all">All Roles</SelectItem>
               <SelectItem value="admin">Admin</SelectItem>
-              <SelectItem value="viewer">Viewer</SelectItem>
+              <SelectItem value="employee">Employee</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -247,7 +247,7 @@ const Users = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {[
           { role: 'admin', icon: <Shield className="h-5 w-5" />, label: 'Admins' },
-          { role: 'viewer', icon: <UserPlus className="h-5 w-5" />, label: 'Viewers' },
+          { role: 'employee', icon: <UserPlus className="h-5 w-5" />, label: 'Employees' },
         ].map((item) => {
           const count = users.filter(u => u.role === item.role).length;
           return (

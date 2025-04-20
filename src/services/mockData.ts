@@ -19,7 +19,7 @@ export const mockUsers: User[] = [
     email: 'jane.smith@example.com',
     phone: '987-654-3210',
     department: 'HR',
-    role: 'viewer',
+    role: 'employee',
     profileImageUrl: 'https://i.pravatar.cc/150?img=2'
   },
   {
@@ -28,7 +28,7 @@ export const mockUsers: User[] = [
     email: 'alice.johnson@example.com',
     phone: '555-123-4567',
     department: 'Finance',
-    role: 'viewer',
+    role: 'employee',
     profileImageUrl: 'https://i.pravatar.cc/150?img=3'
   },
   {
@@ -46,7 +46,7 @@ export const mockUsers: User[] = [
     email: 'charlie.brown@example.com',
     phone: '444-555-6666',
     department: 'Operations',
-    role: 'viewer',
+    role: 'employee',
     profileImageUrl: 'https://i.pravatar.cc/150?img=5'
   },
 ];
