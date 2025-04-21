@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Menu, Bell, UserRound } from 'lucide-react';
+import { Menu, Bell, UserRound, Search } from 'lucide-react';
 import { getUserNotifications } from '@/services/mockData';
 import { Notification } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
