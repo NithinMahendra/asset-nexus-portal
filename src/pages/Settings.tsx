@@ -27,9 +27,6 @@ const SettingsPage = () => {
     }, 2000);
   };
 
-  // Only show top tabs for general/company sections
-  const showTopTabs = tabValue === 'general' || tabValue === 'company';
-
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between">
@@ -40,49 +37,59 @@ const SettingsPage = () => {
           </p>
         </div>
         
-        {/* Move the top tabs inside a separate Tabs component */}
-        {showTopTabs && (
-          <Tabs value={tabValue} onValueChange={setTabValue} className="mt-4 md:mt-0">
-            <TabsList className="flex justify-end gap-2 bg-white dark:bg-gray-900 rounded-lg border border-border px-2 py-1 shadow-sm">
-              <TabsTrigger 
-                value="general" 
-                className={`flex items-center px-3 ${tabValue==='general' ? 'font-bold' : ''}`}
-              >
-                <Globe className="h-4 w-4 mr-2" />
-                General
-              </TabsTrigger>
-              <TabsTrigger 
-                value="company" 
-                className={`flex items-center px-3 ${tabValue==='company' ? 'font-bold' : ''}`}
-              >
-                <Layers className="h-4 w-4 mr-2" />
-                Company
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        )}
+        {/* Always show top tabs for general/company sections */}
+        <Tabs value={tabValue} onValueChange={setTabValue} className="mt-4 md:mt-0">
+          <TabsList className="flex justify-end gap-2 bg-white dark:bg-gray-900 rounded-lg border border-border px-2 py-1 shadow-sm">
+            <TabsTrigger 
+              value="general" 
+              className={`flex items-center px-3 ${tabValue==='general' ? 'font-bold' : ''}`}
+            >
+              <Globe className="h-4 w-4 mr-2" />
+              General
+            </TabsTrigger>
+            <TabsTrigger 
+              value="company" 
+              className={`flex items-center px-3 ${tabValue==='company' ? 'font-bold' : ''}`}
+            >
+              <Layers className="h-4 w-4 mr-2" />
+              Company
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
       
       <Tabs value={tabValue} onValueChange={setTabValue}>
         <div className="flex flex-col md:flex-row gap-6">
-          <div className="md:w-64 flex-shrink-0">
+          <div className="md:w-64 flex-shrink-0 pt-6"> {/* Added padding top for spacing */}
             <div className="bg-white dark:bg-gray-900 rounded-lg border border-border p-1">
-              <TabsList className="flex flex-col w-full space-y-1 md:space-y-0">
+              <TabsList className="flex flex-col w-full space-y-2 md:space-y-3">
                 {/* Removed General and Company tabs from the sidebar */}
-                <TabsTrigger value="notifications" className="w-full justify-start text-left px-3">
-                  <Bell className="h-4 w-4 mr-2" />
+                <TabsTrigger 
+                  value="notifications" 
+                  className="w-full justify-start text-left px-3 text-base font-semibold"
+                >
+                  <Bell className="h-5 w-5 mr-3" />
                   Notifications
                 </TabsTrigger>
-                <TabsTrigger value="security" className="w-full justify-start text-left px-3">
-                  <Shield className="h-4 w-4 mr-2" />
+                <TabsTrigger 
+                  value="security" 
+                  className="w-full justify-start text-left px-3 text-base font-semibold"
+                >
+                  <Shield className="h-5 w-5 mr-3" />
                   Security
                 </TabsTrigger>
-                <TabsTrigger value="data" className="w-full justify-start text-left px-3">
-                  <Database className="h-4 w-4 mr-2" />
+                <TabsTrigger 
+                  value="data" 
+                  className="w-full justify-start text-left px-3 text-base font-semibold"
+                >
+                  <Database className="h-5 w-5 mr-3" />
                   Data Management
                 </TabsTrigger>
-                <TabsTrigger value="email" className="w-full justify-start text-left px-3">
-                  <Mail className="h-4 w-4 mr-2" />
+                <TabsTrigger 
+                  value="email" 
+                  className="w-full justify-start text-left px-3 text-base font-semibold"
+                >
+                  <Mail className="h-5 w-5 mr-3" />
                   Email Settings
                 </TabsTrigger>
               </TabsList>
