@@ -1,7 +1,6 @@
-
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { getDashboardStats, getCategoryBreakdown, getAssetsByStatus, assets } from '@/services/mockData';
+import { getDashboardStats, getCategoryBreakdown, getAssetsByStatus } from '@/services/mockData';
 import { BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import { Package, Users, AlertTriangle, Check, Clock, TrendingUp } from 'lucide-react';
 import { AssetStatus, AssetCategory, CategoryBreakdown } from '@/types';
@@ -9,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { getAllAssets } from '@/lib/supabase-utils';
 import MonthlyAcquisitionChart from '@/components/dashboard/MonthlyAcquisitionChart';
+import { Link } from 'react-router-dom';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#FF6B6B'];
 
@@ -29,6 +29,7 @@ const DashboardPage = () => {
   });
   const [categoryData, setCategoryData] = useState<CategoryBreakdown[]>([]);
   const [statusData, setStatusData] = useState<{ name: string, value: number }[]>([]);
+  const [assets, setAssets] = useState<any[]>([]);
   
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -44,11 +45,20 @@ const DashboardPage = () => {
           const maintenanceAssets = realAssets.filter(asset => asset.status === 'repair').length;
           const utilization = Math.round((assignedAssets / totalAssets) * 100);
           
+          // Sort assets by creation date (newest first) for recent assets section
+          const sortedAssets = [...realAssets].sort((a, b) => {
+            const dateA = new Date(a.purchaseDate);
+            const dateB = new Date(b.purchaseDate);
+            return dateB.getTime() - dateA.getTime();
+          });
+          
+          // Update state with real data
+          setAssets(sortedAssets);
           setStats({
-            totalAssets,
-            totalUsers: assignedAssets, // This is an approximation; you might want to fetch actual users
-            needsAttention: maintenanceAssets,
-            utilization
+            totalAssets: realAssets.length,
+            totalUsers: realAssets.filter(asset => asset.status === 'assigned').length,
+            needsAttention: realAssets.filter(asset => asset.status === 'repair').length,
+            utilization: Math.round((realAssets.filter(asset => asset.status === 'assigned').length / realAssets.length) * 100)
           });
           
           // Calculate status breakdown
@@ -83,7 +93,7 @@ const DashboardPage = () => {
           const newCategoryData: CategoryBreakdown[] = Object.entries(categories).map(([category, count]) => ({
             category: category as AssetCategory,
             count: count,
-            percentage: Math.round((count / totalAssets) * 100)
+            percentage: Math.round((count / realAssets.length) * 100)
           }));
           
           setCategoryData(newCategoryData);
@@ -244,17 +254,25 @@ const DashboardPage = () => {
           </CardHeader>
           <CardContent className="max-h-80 overflow-auto">
             <div className="space-y-4">
-              {assets.slice(0, 5).map((asset) => (
-                <div key={asset.id} className="flex items-center justify-between border-b pb-4">
-                  <div>
-                    <p className="font-medium">{asset.name}</p>
-                    <p className="text-muted-foreground text-sm">{asset.serialNumber || 'No serial'}</p>
+              {assets && assets.length > 0 ? (
+                assets.slice(0, 5).map((asset) => (
+                  <div key={asset.id} className="flex items-center justify-between border-b pb-4">
+                    <div>
+                      <Link to={`/assets/${asset.id}`} className="font-medium hover:text-primary">
+                        {asset.name}
+                      </Link>
+                      <p className="text-muted-foreground text-sm">{asset.serialNumber || 'No serial'}</p>
+                    </div>
+                    <Badge className={cn(statusColors[asset.status as keyof typeof statusColors] || 'bg-gray-500')}>
+                      {asset.status}
+                    </Badge>
                   </div>
-                  <Badge className={cn(statusColors[asset.status as keyof typeof statusColors] || 'bg-gray-500')}>
-                    {asset.status}
-                  </Badge>
+                ))
+              ) : (
+                <div className="text-center text-muted-foreground py-4">
+                  No assets found
                 </div>
-              ))}
+              )}
             </div>
           </CardContent>
         </Card>
