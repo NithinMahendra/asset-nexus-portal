@@ -27,7 +27,7 @@ const SettingsPage = () => {
     }, 2000);
   };
 
-  // Only show General/Company tabs at the upper right when on those tabs
+  // Only show top tabs for general/company sections
   const showTopTabs = tabValue === 'general' || tabValue === 'company';
 
   return (
@@ -39,25 +39,27 @@ const SettingsPage = () => {
             Configure your system preferences and settings
           </p>
         </div>
+        
+        {/* Move the top tabs inside a separate Tabs component */}
         {showTopTabs && (
-          <TabsList className="flex justify-end gap-2 mt-4 md:mt-0 bg-white dark:bg-gray-900 rounded-lg border border-border px-2 py-1 shadow-sm">
-            <TabsTrigger 
-              value="general" 
-              className={`flex items-center px-3 ${tabValue==='general' ? 'font-bold' : ''}`}
-              onClick={() => setTabValue('general')}
-            >
-              <Globe className="h-4 w-4 mr-2" />
-              General
-            </TabsTrigger>
-            <TabsTrigger 
-              value="company" 
-              className={`flex items-center px-3 ${tabValue==='company' ? 'font-bold' : ''}`}
-              onClick={() => setTabValue('company')}
-            >
-              <Layers className="h-4 w-4 mr-2" />
-              Company
-            </TabsTrigger>
-          </TabsList>
+          <Tabs value={tabValue} onValueChange={setTabValue} className="mt-4 md:mt-0">
+            <TabsList className="flex justify-end gap-2 bg-white dark:bg-gray-900 rounded-lg border border-border px-2 py-1 shadow-sm">
+              <TabsTrigger 
+                value="general" 
+                className={`flex items-center px-3 ${tabValue==='general' ? 'font-bold' : ''}`}
+              >
+                <Globe className="h-4 w-4 mr-2" />
+                General
+              </TabsTrigger>
+              <TabsTrigger 
+                value="company" 
+                className={`flex items-center px-3 ${tabValue==='company' ? 'font-bold' : ''}`}
+              >
+                <Layers className="h-4 w-4 mr-2" />
+                Company
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         )}
       </div>
       
@@ -69,7 +71,6 @@ const SettingsPage = () => {
                 <TabsTrigger 
                   value="general" 
                   className="w-full justify-start text-left px-3"
-                  onClick={() => setTabValue('general')}
                 >
                   <Globe className="h-4 w-4 mr-2" />
                   General
@@ -77,24 +78,23 @@ const SettingsPage = () => {
                 <TabsTrigger 
                   value="company" 
                   className="w-full justify-start text-left px-3"
-                  onClick={() => setTabValue('company')}
                 >
                   <Layers className="h-4 w-4 mr-2" />
                   Company
                 </TabsTrigger>
-                <TabsTrigger value="notifications" className="w-full justify-start text-left px-3" onClick={() => setTabValue('notifications')}>
+                <TabsTrigger value="notifications" className="w-full justify-start text-left px-3">
                   <Bell className="h-4 w-4 mr-2" />
                   Notifications
                 </TabsTrigger>
-                <TabsTrigger value="security" className="w-full justify-start text-left px-3" onClick={() => setTabValue('security')}>
+                <TabsTrigger value="security" className="w-full justify-start text-left px-3">
                   <Shield className="h-4 w-4 mr-2" />
                   Security
                 </TabsTrigger>
-                <TabsTrigger value="data" className="w-full justify-start text-left px-3" onClick={() => setTabValue('data')}>
+                <TabsTrigger value="data" className="w-full justify-start text-left px-3">
                   <Database className="h-4 w-4 mr-2" />
                   Data Management
                 </TabsTrigger>
-                <TabsTrigger value="email" className="w-full justify-start text-left px-3" onClick={() => setTabValue('email')}>
+                <TabsTrigger value="email" className="w-full justify-start text-left px-3">
                   <Mail className="h-4 w-4 mr-2" />
                   Email Settings
                 </TabsTrigger>
@@ -151,4 +151,3 @@ const SettingsPage = () => {
 };
 
 export default SettingsPage;
-
