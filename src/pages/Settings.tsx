@@ -68,20 +68,7 @@ const SettingsPage = () => {
           <div className="md:w-64 flex-shrink-0">
             <div className="bg-white dark:bg-gray-900 rounded-lg border border-border p-1">
               <TabsList className="flex flex-col w-full space-y-1 md:space-y-0">
-                <TabsTrigger 
-                  value="general" 
-                  className="w-full justify-start text-left px-3"
-                >
-                  <Globe className="h-4 w-4 mr-2" />
-                  General
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="company" 
-                  className="w-full justify-start text-left px-3"
-                >
-                  <Layers className="h-4 w-4 mr-2" />
-                  Company
-                </TabsTrigger>
+                {/* Removed General and Company tabs from the sidebar */}
                 <TabsTrigger value="notifications" className="w-full justify-start text-left px-3">
                   <Bell className="h-4 w-4 mr-2" />
                   Notifications
