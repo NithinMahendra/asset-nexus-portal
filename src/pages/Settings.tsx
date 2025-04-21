@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -60,7 +59,8 @@ const SettingsPage = () => {
       
       <Tabs value={tabValue} onValueChange={setTabValue}>
         <div className="flex flex-col md:flex-row gap-6">
-          <div className="md:w-64 flex-shrink-0 pt-6"> {/* Added padding top for spacing */}
+          {/* Increase padding top here from pt-6 to pt-12 to move down sidebar */}
+          <div className="md:w-64 flex-shrink-0 pt-12">
             <div className="bg-white dark:bg-gray-900 rounded-lg border border-border p-1">
               <TabsList className="flex flex-col w-full space-y-2 md:space-y-3">
                 {/* Removed General and Company tabs from the sidebar */}
