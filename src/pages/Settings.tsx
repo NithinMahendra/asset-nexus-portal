@@ -13,6 +13,7 @@ import EmailSettings from '@/components/settings/EmailSettings';
 
 const SettingsPage = () => {
   const [isSettingsSaved, setIsSettingsSaved] = useState(false);
+  const [tabValue, setTabValue] = useState('general');
 
   const handleSaveSettings = () => {
     setIsSettingsSaved(true);
@@ -26,41 +27,74 @@ const SettingsPage = () => {
     }, 2000);
   };
 
+  // Only show General/Company tabs at the upper right when on those tabs
+  const showTopTabs = tabValue === 'general' || tabValue === 'company';
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground">
-          Configure your system preferences and settings
-        </p>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+          <p className="text-muted-foreground">
+            Configure your system preferences and settings
+          </p>
+        </div>
+        {showTopTabs && (
+          <TabsList className="flex justify-end gap-2 mt-4 md:mt-0 bg-white dark:bg-gray-900 rounded-lg border border-border px-2 py-1 shadow-sm">
+            <TabsTrigger 
+              value="general" 
+              className={`flex items-center px-3 ${tabValue==='general' ? 'font-bold' : ''}`}
+              onClick={() => setTabValue('general')}
+            >
+              <Globe className="h-4 w-4 mr-2" />
+              General
+            </TabsTrigger>
+            <TabsTrigger 
+              value="company" 
+              className={`flex items-center px-3 ${tabValue==='company' ? 'font-bold' : ''}`}
+              onClick={() => setTabValue('company')}
+            >
+              <Layers className="h-4 w-4 mr-2" />
+              Company
+            </TabsTrigger>
+          </TabsList>
+        )}
       </div>
       
-      <Tabs defaultValue="general">
+      <Tabs value={tabValue} onValueChange={setTabValue}>
         <div className="flex flex-col md:flex-row gap-6">
           <div className="md:w-64 flex-shrink-0">
             <div className="bg-white dark:bg-gray-900 rounded-lg border border-border p-1">
-              <TabsList className="flex flex-col w-full space-y-1">
-                <TabsTrigger value="general" className="w-full justify-start text-left px-3">
+              <TabsList className="flex flex-col w-full space-y-1 md:space-y-0">
+                <TabsTrigger 
+                  value="general" 
+                  className="w-full justify-start text-left px-3"
+                  onClick={() => setTabValue('general')}
+                >
                   <Globe className="h-4 w-4 mr-2" />
                   General
                 </TabsTrigger>
-                <TabsTrigger value="company" className="w-full justify-start text-left px-3">
+                <TabsTrigger 
+                  value="company" 
+                  className="w-full justify-start text-left px-3"
+                  onClick={() => setTabValue('company')}
+                >
                   <Layers className="h-4 w-4 mr-2" />
                   Company
                 </TabsTrigger>
-                <TabsTrigger value="notifications" className="w-full justify-start text-left px-3">
+                <TabsTrigger value="notifications" className="w-full justify-start text-left px-3" onClick={() => setTabValue('notifications')}>
                   <Bell className="h-4 w-4 mr-2" />
                   Notifications
                 </TabsTrigger>
-                <TabsTrigger value="security" className="w-full justify-start text-left px-3">
+                <TabsTrigger value="security" className="w-full justify-start text-left px-3" onClick={() => setTabValue('security')}>
                   <Shield className="h-4 w-4 mr-2" />
                   Security
                 </TabsTrigger>
-                <TabsTrigger value="data" className="w-full justify-start text-left px-3">
+                <TabsTrigger value="data" className="w-full justify-start text-left px-3" onClick={() => setTabValue('data')}>
                   <Database className="h-4 w-4 mr-2" />
                   Data Management
                 </TabsTrigger>
-                <TabsTrigger value="email" className="w-full justify-start text-left px-3">
+                <TabsTrigger value="email" className="w-full justify-start text-left px-3" onClick={() => setTabValue('email')}>
                   <Mail className="h-4 w-4 mr-2" />
                   Email Settings
                 </TabsTrigger>
@@ -117,3 +151,4 @@ const SettingsPage = () => {
 };
 
 export default SettingsPage;
+
