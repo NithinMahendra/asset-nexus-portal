@@ -11,6 +11,8 @@ import SecuritySettings from '@/components/settings/SecuritySettings';
 import DataManagementSettings from '@/components/settings/DataManagementSettings';
 import EmailSettings from '@/components/settings/EmailSettings';
 import AddUserForm from '@/components/users/AddUserForm';
+import RoleBasedAccess from '@/components/RoleBasedAccess';
+import { UserRole } from '@/types';
 
 const SettingsPage = () => {
   const [isSettingsSaved, setIsSettingsSaved] = useState(false);
@@ -94,13 +96,15 @@ const SettingsPage = () => {
                   <Mail className="h-5 w-5 mr-3" />
                   Email Settings
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="newUser" 
-                  className="w-full justify-start text-left px-3 text-base font-semibold"
-                >
-                  <UserPlus className="h-5 w-5 mr-3" />
-                  New User
-                </TabsTrigger>
+                <RoleBasedAccess allowedRoles={['admin']}>
+                  <TabsTrigger 
+                    value="newUser" 
+                    className="w-full justify-start text-left px-3 text-base font-semibold"
+                  >
+                    <UserPlus className="h-5 w-5 mr-3" />
+                    New User
+                  </TabsTrigger>
+                </RoleBasedAccess>
               </TabsList>
             </div>
           </div>
@@ -130,13 +134,15 @@ const SettingsPage = () => {
               <EmailSettings />
             </TabsContent>
             
-            <TabsContent value="newUser" className="space-y-6 mt-0">
-              <div className="bg-white dark:bg-gray-900 rounded-lg border border-border p-6">
-                <h2 className="text-xl font-bold mb-4">Add New User</h2>
-                <p className="text-muted-foreground mb-6">Create a new user account with specific role and permissions.</p>
-                <AddUserForm isOpen={true} onClose={() => {}} />
-              </div>
-            </TabsContent>
+            <RoleBasedAccess allowedRoles={['admin']}>
+              <TabsContent value="newUser" className="space-y-6 mt-0">
+                <div className="bg-white dark:bg-gray-900 rounded-lg border border-border p-6">
+                  <h2 className="text-xl font-bold mb-4">Add New User</h2>
+                  <p className="text-muted-foreground mb-6">Create a new user account with specific role and permissions.</p>
+                  <AddUserForm isOpen={true} onClose={() => {}} />
+                </div>
+              </TabsContent>
+            </RoleBasedAccess>
           </div>
         </div>
       </Tabs>

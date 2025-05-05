@@ -45,11 +45,17 @@ import {
   User,
   History,
   AlertTriangle,
-  Check
+  Check,
+  QrCode,
+  ScanLine
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import AddAssetForm from '@/components/assets/AddAssetForm';
+import AssetQRCode from '@/components/assets/AssetQRCode';
+import AssetQRScanner from '@/components/assets/AssetQRScanner';
+import RoleBasedAccess from '@/components/RoleBasedAccess';
+import { useNavigate } from 'react-router-dom';
 
 const statusColors: Record<AssetStatus, string> = {
   available: 'bg-status-available',
@@ -66,6 +72,9 @@ const AssetList = () => {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddAssetOpen, setIsAddAssetOpen] = useState(false);
+  const [qrCodeAsset, setQrCodeAsset] = useState<{id: string, name: string} | null>(null);
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const navigate = useNavigate();
   
   // Load assets from Supabase
   useEffect(() => {
@@ -145,10 +154,18 @@ const AssetList = () => {
             Manage and track all company assets
           </p>
         </div>
-        <Button className="bg-primary" onClick={() => setIsAddAssetOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Asset
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setIsScannerOpen(true)}>
+            <ScanLine className="mr-2 h-4 w-4" />
+            Scan QR
+          </Button>
+          <RoleBasedAccess allowedRoles={['admin']}>
+            <Button className="bg-primary" onClick={() => setIsAddAssetOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Asset
+            </Button>
+          </RoleBasedAccess>
+        </div>
       </div>
       
       <div className="flex flex-col sm:flex-row gap-4">
@@ -193,16 +210,18 @@ const AssetList = () => {
             </Select>
           </div>
           
-          <div className="flex gap-2">
-            <Button variant="outline" className="flex-shrink-0">
-              <FileDown className="h-4 w-4 mr-2" />
-              Export
-            </Button>
-            <Button variant="outline" className="flex-shrink-0">
-              <FileUp className="h-4 w-4 mr-2" />
-              Import
-            </Button>
-          </div>
+          <RoleBasedAccess allowedRoles={['admin']}>
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-shrink-0">
+                <FileDown className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+              <Button variant="outline" className="flex-shrink-0">
+                <FileUp className="h-4 w-4 mr-2" />
+                Import
+              </Button>
+            </div>
+          </RoleBasedAccess>
         </div>
       </div>
       
@@ -235,7 +254,7 @@ const AssetList = () => {
                   filteredAssets.map((asset) => (
                     <TableRow key={asset.id}>
                       <TableCell className="font-medium">
-                        <Link to={`/assets/${asset.id}`} className="hover:text-primary">
+                        <Link to={`/asset-scanner/${asset.id}`} className="hover:text-primary">
                           {asset.name}
                         </Link>
                       </TableCell>
@@ -269,19 +288,34 @@ const AssetList = () => {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem>
-                              <Edit className="mr-2 h-4 w-4" /> Edit
+                            
+                            <DropdownMenuItem onClick={() => navigate(`/asset-scanner/${asset.id}`)}>
+                              <QrCode className="mr-2 h-4 w-4" /> View Details
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <User className="mr-2 h-4 w-4" /> Assign
+                            
+                            <DropdownMenuItem onClick={() => setQrCodeAsset({ id: asset.id, name: asset.name })}>
+                              <QrCode className="mr-2 h-4 w-4" /> Generate QR Code
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <History className="mr-2 h-4 w-4" /> View History
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-red-600">
-                              <Trash className="mr-2 h-4 w-4" /> Delete
-                            </DropdownMenuItem>
+                            
+                            <RoleBasedAccess allowedRoles={['admin']}>
+                              <DropdownMenuItem>
+                                <Edit className="mr-2 h-4 w-4" /> Edit
+                              </DropdownMenuItem>
+                              
+                              <DropdownMenuItem>
+                                <User className="mr-2 h-4 w-4" /> Assign
+                              </DropdownMenuItem>
+                              
+                              <DropdownMenuItem>
+                                <History className="mr-2 h-4 w-4" /> View History
+                              </DropdownMenuItem>
+                              
+                              <DropdownMenuSeparator />
+                              
+                              <DropdownMenuItem className="text-red-600">
+                                <Trash className="mr-2 h-4 w-4" /> Delete
+                              </DropdownMenuItem>
+                            </RoleBasedAccess>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -334,6 +368,23 @@ const AssetList = () => {
         isOpen={isAddAssetOpen} 
         onClose={() => setIsAddAssetOpen(false)} 
         onSuccess={loadAssets}
+      />
+      
+      {/* QR Code generation Dialog */}
+      {qrCodeAsset && (
+        <AssetQRCode 
+          assetId={qrCodeAsset.id}
+          assetName={qrCodeAsset.name}
+          isOpen={!!qrCodeAsset}
+          onClose={() => setQrCodeAsset(null)}
+        />
+      )}
+      
+      {/* QR Code Scanner Dialog */}
+      <AssetQRScanner 
+        isOpen={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
+        onSuccess={(assetId) => navigate(`/asset-scanner/${assetId}`)}
       />
     </div>
   );
