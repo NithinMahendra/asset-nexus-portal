@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -38,7 +39,7 @@ const formSchema = z.object({
   phone: z.string().optional(),
   department: z.string().optional(),
   role: z.enum(["super_admin", "admin", "employee"]),
-  profileImageUrl: z.string().url({ message: "Please enter a valid URL" }).optional()
+  profileImageUrl: z.string().url({ message: "Please enter a valid URL" }).optional().or(z.literal(''))
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -75,7 +76,7 @@ export default function AddUserForm({ isOpen, onClose, onSuccess }: AddUserFormP
         phone: data.phone,
         department: data.department,
         role: data.role as UserRole,
-        profileImageUrl: data.profileImageUrl
+        profileImageUrl: data.profileImageUrl || undefined
       });
       
       if (user) {
@@ -92,6 +93,110 @@ export default function AddUserForm({ isOpen, onClose, onSuccess }: AddUserFormP
     } finally {
       setIsSubmitting(false);
     }
+  }
+  
+  // If the form is embedded in a page (not in a dialog)
+  if (!isOpen && onClose === (() => {})) {
+    return (
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Full Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter full name" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input type="email" placeholder="Enter email address" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Phone (Optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter phone number" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="department"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Department (Optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter department" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <FormField
+            control={form.control}
+            name="role"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Role</FormLabel>
+                <Select 
+                  onValueChange={field.onChange} 
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a role" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="super_admin">Super Admin</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="employee">Employee</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Creating...
+              </>
+            ) : (
+              "Create User"
+            )}
+          </Button>
+        </form>
+      </Form>
+    );
   }
   
   return (
@@ -185,20 +290,6 @@ export default function AddUserForm({ isOpen, onClose, onSuccess }: AddUserFormP
                       <SelectItem value="employee">Employee</SelectItem>
                     </SelectContent>
                   </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="profileImageUrl"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Profile Image URL (Optional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter profile image URL" {...field} />
-                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

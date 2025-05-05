@@ -1,7 +1,8 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Save, Globe, Layers, Bell, Shield, Database, Mail } from 'lucide-react';
+import { Save, Globe, Layers, Bell, Shield, Database, Mail, UserPlus } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import GeneralSettings from '@/components/settings/GeneralSettings';
 import CompanySettings from '@/components/settings/CompanySettings';
@@ -9,6 +10,7 @@ import NotificationSettings from '@/components/settings/NotificationSettings';
 import SecuritySettings from '@/components/settings/SecuritySettings';
 import DataManagementSettings from '@/components/settings/DataManagementSettings';
 import EmailSettings from '@/components/settings/EmailSettings';
+import AddUserForm from '@/components/users/AddUserForm';
 
 const SettingsPage = () => {
   const [isSettingsSaved, setIsSettingsSaved] = useState(false);
@@ -92,6 +94,13 @@ const SettingsPage = () => {
                   <Mail className="h-5 w-5 mr-3" />
                   Email Settings
                 </TabsTrigger>
+                <TabsTrigger 
+                  value="newUser" 
+                  className="w-full justify-start text-left px-3 text-base font-semibold"
+                >
+                  <UserPlus className="h-5 w-5 mr-3" />
+                  New User
+                </TabsTrigger>
               </TabsList>
             </div>
           </div>
@@ -119,6 +128,14 @@ const SettingsPage = () => {
             
             <TabsContent value="email" className="space-y-6 mt-0">
               <EmailSettings />
+            </TabsContent>
+            
+            <TabsContent value="newUser" className="space-y-6 mt-0">
+              <div className="bg-white dark:bg-gray-900 rounded-lg border border-border p-6">
+                <h2 className="text-xl font-bold mb-4">Add New User</h2>
+                <p className="text-muted-foreground mb-6">Create a new user account with specific role and permissions.</p>
+                <AddUserForm isOpen={true} onClose={() => {}} />
+              </div>
             </TabsContent>
           </div>
         </div>
