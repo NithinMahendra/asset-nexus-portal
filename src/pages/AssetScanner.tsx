@@ -84,12 +84,19 @@ const AssetScanner = () => {
             warrantyExpiry: data.warranty_expiry,
             location: data.location,
             // Check if assigned_to is an object with the needed properties
-            assignedTo: assignedToData && typeof assignedToData === 'object' ? {
-              id: assignedToData.id,
-              name: assignedToData.name,
-              email: assignedToData.email,
-              role: 'employee' // Default role if not specified
-            } : undefined,
+            assignedTo: assignedToData && 
+              typeof assignedToData === 'object' && 
+              assignedToData !== null && 
+              'id' in assignedToData && 
+              'name' in assignedToData && 
+              'email' in assignedToData
+                ? {
+                    id: assignedToData.id,
+                    name: assignedToData.name,
+                    email: assignedToData.email,
+                    role: 'employee' // Default role if not specified
+                  } 
+                : undefined,
             assignedDate: data.assigned_date,
             serialNumber: data.serial_number,
             model: data.model,
