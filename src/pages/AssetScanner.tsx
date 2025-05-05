@@ -6,97 +6,85 @@ import { Asset, AssetCategory, AssetStatus } from '@/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { useForm } from 'react-hook-form';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { toast } from '@/components/ui/use-toast';
 import { 
   AlertTriangle, 
   Clock, 
-  Wrench, // Using Wrench instead of Tool
+  Wrench, // Replace Tool with Wrench icon
   User,
   Calendar,
   Package,
-  MapPin,
-  Tag,
-  Info,
-  FileText,
-  Clipboard,
+  CheckCircle,
+  Loader2
 } from 'lucide-react';
-import { toast } from '@/components/ui/use-toast';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useAuth } from '@/providers/AuthProvider';
-import RoleBasedAccess from '@/components/RoleBasedAccess';
-import AssetMaintenanceRequest from '@/components/assets/AssetMaintenanceRequest';
 
-const AssetScanner = () => {
+const statusColors: Record<string, string> = {
+  available: 'bg-green-500',
+  assigned: 'bg-blue-500',
+  repair: 'bg-yellow-500',
+  retired: 'bg-gray-500',
+  lost: 'bg-red-500',
+};
+
+const requestSchema = z.object({
+  type: z.enum(['maintenance', 'issue', 'return']),
+  description: z.string().min(10, 'Description must be at least 10 characters'),
+});
+
+type RequestFormValues = z.infer<typeof requestSchema>;
+
+const AssetScannerPage = () => {
   const { assetId } = useParams<{ assetId: string }>();
   const [asset, setAsset] = useState<Asset | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [history, setHistory] = useState<any[]>([]);
-  const [isMaintenanceModalOpen, setIsMaintenanceModalOpen] = useState(false);
-  const { user, userRole } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user } = useAuth();
   
-  const { register, handleSubmit, formState: { errors } } = useForm({
+  const form = useForm<RequestFormValues>({
+    resolver: zodResolver(requestSchema),
     defaultValues: {
-      issue: '',
-      issueType: 'issue'
-    }
+      type: 'maintenance',
+      description: '',
+    },
   });
-
-  // Fetch asset data when component mounts or assetId changes
+  
   useEffect(() => {
-    if (!assetId) return;
-    
-    const fetchAssetData = async () => {
-      setLoading(true);
+    const fetchAsset = async () => {
+      if (!assetId) return;
+      
       try {
-        // Fetch asset details
+        setIsLoading(true);
         const { data, error } = await supabase
           .from('assets')
-          .select(`
-            id,
-            name,
-            category,
-            status,
-            purchase_date,
-            warranty_expiry,
-            location,
-            assigned_to,
-            assigned_date,
-            serial_number,
-            model,
-            description,
-            value
-          `)
+          .select('*, assignedTo:assigned_to(id, name, email)')
           .eq('id', assetId)
           .single();
-
-        if (error) throw error;
-        if (data) {
-          // Fix the assigned_to handling by properly checking its type
-          const assignedToData = data.assigned_to;
           
+        if (error) throw error;
+        
+        if (data) {
           setAsset({
             id: data.id,
             name: data.name,
-            category: data.category as AssetCategory,
-            status: data.status as AssetStatus,
+            category: data.category as AssetCategory, // Add type casting
+            status: data.status as AssetStatus, // Add type casting
             purchaseDate: data.purchase_date,
             warrantyExpiry: data.warranty_expiry,
             location: data.location,
-            // Check if assigned_to is an object with the needed properties
-            assignedTo: assignedToData && 
-              typeof assignedToData === 'object' && 
-              assignedToData !== null && 
-              'id' in assignedToData && 
-              'name' in assignedToData && 
-              'email' in assignedToData
-                ? {
-                    id: assignedToData.id,
-                    name: assignedToData.name,
-                    email: assignedToData.email,
-                    role: 'employee' // Default role if not specified
-                  } 
-                : undefined,
+            assignedTo: data.assignedTo ? {
+              id: data.assignedTo.id,
+              name: data.assignedTo.name,
+              email: data.assignedTo.email,
+              role: 'employee' // Add default role to match User type
+            } : undefined,
             assignedDate: data.assigned_date,
             serialNumber: data.serial_number,
             model: data.model,
@@ -104,341 +92,264 @@ const AssetScanner = () => {
             value: data.value,
           });
         }
-
-        // Fetch asset history
-        const { data: historyData, error: historyError } = await supabase
-          .from('asset_history')
-          .select('*')
-          .eq('asset_id', assetId)
-          .order('date', { ascending: false });
-
-        if (historyError) throw historyError;
-        setHistory(historyData || []);
       } catch (error) {
-        console.error('Error fetching asset data:', error);
+        console.error('Error fetching asset:', error);
         toast({
           title: "Error",
-          description: "Failed to load asset data. Please try again.",
+          description: "Failed to load asset information",
           variant: "destructive"
         });
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
-
-    fetchAssetData();
+    
+    fetchAsset();
   }, [assetId]);
 
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric'
-    });
-  };
-
-  const onSubmitIssue = async (data: { issue: string, issueType: 'issue' | 'maintenance' | 'loss' }) => {
-    if (!asset) return;
+  const onSubmit = async (data: RequestFormValues) => {
+    if (!asset || !user) return;
+    
+    setIsSubmitting(true);
     
     try {
+      // Create new record in asset_history
       const { error } = await supabase
         .from('asset_history')
-        .insert([
-          {
-            asset_id: asset.id,
-            action: `reported_${data.issueType}`,
-            date: new Date().toISOString(),
-            user_id: user?.id || null,
-            user_name: user?.email || 'Anonymous User',
-            details: data.issue
-          }
-        ]);
+        .insert({
+          asset_id: asset.id,
+          action: `request_${data.type}`,
+          user_id: user.id,
+          user_name: user.user_metadata?.full_name || user.email,
+          details: data.description
+        });
       
       if (error) throw error;
       
       toast({
-        title: "Report Submitted",
-        description: "Your report has been submitted successfully.",
+        title: "Request Submitted",
+        description: "Your request has been submitted successfully and will be reviewed by the admin team.",
       });
       
-      // Refresh history
-      const { data: historyData, error: historyError } = await supabase
-        .from('asset_history')
-        .select('*')
-        .eq('asset_id', asset.id)
-        .order('date', { ascending: false });
-
-      if (historyError) throw historyError;
-      setHistory(historyData || []);
+      form.reset();
       
     } catch (error) {
-      console.error('Error submitting report:', error);
+      console.error('Error submitting request:', error);
       toast({
-        title: "Submission Failed",
-        description: "There was an error submitting your report. Please try again.",
+        title: "Error",
+        description: "Failed to submit your request. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
+      <div className="flex items-center justify-center h-[60vh]">
+        <div className="flex flex-col items-center">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <h3 className="mt-4 text-lg font-medium">Loading asset information...</h3>
+        </div>
       </div>
     );
   }
 
   if (!asset) {
     return (
-      <div className="text-center py-10">
-        <AlertTriangle className="mx-auto h-12 w-12 text-yellow-500" />
-        <h2 className="mt-4 text-2xl font-semibold">Asset Not Found</h2>
-        <p className="mt-2 text-muted-foreground">The asset you're looking for doesn't exist or you don't have access to view it.</p>
+      <div className="flex items-center justify-center h-[60vh]">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-red-500 flex items-center">
+              <AlertTriangle className="mr-2" />
+              Asset Not Found
+            </CardTitle>
+            <CardDescription>
+              The asset you're looking for doesn't exist or has been removed.
+            </CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Button onClick={() => window.history.back()} className="w-full">
+              Go Back
+            </Button>
+          </CardFooter>
+        </Card>
       </div>
     );
   }
 
-  // Get status color
-  const getStatusColor = (status: string) => {
-    switch(status) {
-      case 'available': return 'bg-green-500 text-white';
-      case 'assigned': return 'bg-blue-500 text-white';
-      case 'repair': return 'bg-orange-500 text-white';
-      case 'retired': return 'bg-gray-500 text-white';
-      default: return 'bg-gray-200';
-    }
-  };
-
   return (
-    <div className="max-w-5xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-1">{asset.name}</h1>
-        <div className="flex items-center">
-          <span className={`px-2 py-1 rounded-md text-xs font-medium ${getStatusColor(asset.status)}`}>
-            {asset.status.charAt(0).toUpperCase() + asset.status.slice(1)}
-          </span>
-          <span className="ml-2 text-sm text-muted-foreground">
-            Asset ID: {asset.id}
-          </span>
-        </div>
+    <div className="container mx-auto py-8 px-4 max-w-4xl animate-fade-in">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Asset Details</h1>
+        <Badge className={statusColors[asset.status] || 'bg-gray-500'}>
+          {asset.status}
+        </Badge>
       </div>
-
-      <div className="grid gap-6 md:grid-cols-3">
-        <div className="md:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Asset Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="flex items-center mb-2">
-                    <Package className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span className="font-medium">Category</span>
-                  </div>
-                  <p>{asset.category}</p>
-                </div>
-                <div>
-                  <div className="flex items-center mb-2">
-                    <Tag className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span className="font-medium">Model</span>
-                  </div>
-                  <p>{asset.model || 'N/A'}</p>
-                </div>
-                <div>
-                  <div className="flex items-center mb-2">
-                    <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span className="font-medium">Location</span>
-                  </div>
-                  <p>{asset.location || 'N/A'}</p>
-                </div>
-                <div>
-                  <div className="flex items-center mb-2">
-                    <Info className="h-4 w-4 mr-2 text-muted-foreground" />
-                    <span className="font-medium">Serial Number</span>
-                  </div>
-                  <p>{asset.serialNumber || 'N/A'}</p>
-                </div>
+      
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle className="text-xl">{asset.name}</CardTitle>
+          <CardDescription>
+            {asset.category} • ID: {asset.id}
+          </CardDescription>
+        </CardHeader>
+        
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground">Serial Number</h3>
+                <p>{asset.serialNumber || 'N/A'}</p>
               </div>
               
               <div>
-                <div className="flex items-center mb-2">
-                  <FileText className="h-4 w-4 mr-2 text-muted-foreground" />
-                  <span className="font-medium">Description</span>
-                </div>
-                <p className="text-sm">{asset.description || 'No description available'}</p>
+                <h3 className="text-sm font-medium text-muted-foreground">Model</h3>
+                <p>{asset.model || 'N/A'}</p>
               </div>
-            </CardContent>
-          </Card>
-
-          <Tabs defaultValue="timeline" className="mt-6">
-            <TabsList>
-              <TabsTrigger value="timeline">Timeline</TabsTrigger>
-              <TabsTrigger value="report">Report Issue</TabsTrigger>
-            </TabsList>
+              
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground">Location</h3>
+                <p>{asset.location || 'N/A'}</p>
+              </div>
+            </div>
             
-            <TabsContent value="timeline">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Asset Timeline</CardTitle>
-                  <CardDescription>History of events for this asset</CardDescription>
-                </CardHeader>
-                <CardContent className="max-h-80 overflow-y-auto">
-                  {history.length > 0 ? (
-                    <div className="space-y-4">
-                      {history.map((event, index) => (
-                        <div key={index} className="border-l-2 border-primary pl-4 pb-4">
-                          <p className="text-sm text-muted-foreground">
-                            {new Date(event.date).toLocaleDateString('en-US', {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </p>
-                          <p className="font-medium capitalize">
-                            {event.action.replace(/_/g, ' ')}
-                          </p>
-                          <p className="text-sm">{event.user_name}</p>
-                          {event.details && (
-                            <p className="text-sm mt-1">{event.details}</p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-center py-4 text-muted-foreground">
-                      No history available for this asset.
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="report">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Report an Issue</CardTitle>
-                  <CardDescription>
-                    Submit a report about this asset
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleSubmit(onSubmitIssue)} className="space-y-4">
-                    <div className="grid grid-cols-1 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-sm font-medium">Issue Type</label>
+            <div className="space-y-4">
+              <div className="flex items-center">
+                <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+                <h3 className="text-sm font-medium text-muted-foreground">Purchase Date</h3>
+                <p className="ml-auto">{asset.purchaseDate ? new Date(asset.purchaseDate).toLocaleDateString() : 'N/A'}</p>
+              </div>
+              
+              <div className="flex items-center">
+                <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
+                <h3 className="text-sm font-medium text-muted-foreground">Warranty Expiry</h3>
+                <p className="ml-auto">
+                  {asset.warrantyExpiry ? new Date(asset.warrantyExpiry).toLocaleDateString() : 'N/A'}
+                </p>
+              </div>
+              
+              <div className="flex items-center">
+                <User className="h-4 w-4 mr-2 text-muted-foreground" />
+                <h3 className="text-sm font-medium text-muted-foreground">Assigned To</h3>
+                <p className="ml-auto">
+                  {asset.assignedTo ? asset.assignedTo.name : 'Not assigned'}
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          {asset.description && (
+            <>
+              <Separator />
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground mb-2">Description</h3>
+                <p className="text-sm">{asset.description}</p>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
+      
+      {user && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Submit a Request</CardTitle>
+            <CardDescription>
+              Report an issue or request maintenance for this asset
+            </CardDescription>
+          </CardHeader>
+          
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Request Type</FormLabel>
+                      <FormControl>
                         <div className="flex flex-wrap gap-2">
-                          <Button 
-                            type="button" 
-                            {...register("issueType")}
-                            onClick={() => setIsMaintenanceModalOpen(true)}
+                          <Button
+                            type="button"
+                            variant={field.value === 'maintenance' ? 'default' : 'outline'}
+                            onClick={() => field.onChange('maintenance')}
                             className="flex-1"
                           >
                             <Wrench className="mr-2 h-4 w-4" />
                             Maintenance
                           </Button>
-                          <Button 
-                            type="button" 
-                            {...register("issueType")}
-                            onClick={() => setIsMaintenanceModalOpen(true)}
+                          <Button
+                            type="button"
+                            variant={field.value === 'issue' ? 'default' : 'outline'}
+                            onClick={() => field.onChange('issue')}
                             className="flex-1"
                           >
                             <AlertTriangle className="mr-2 h-4 w-4" />
-                            Issue Report
+                            Report Issue
+                          </Button>
+                          <Button
+                            type="button"
+                            variant={field.value === 'return' ? 'default' : 'outline'}
+                            onClick={() => field.onChange('return')}
+                            className="flex-1"
+                          >
+                            <Package className="mr-2 h-4 w-4" />
+                            Return Asset
                           </Button>
                         </div>
-                      </div>
-                    </div>
-                  </form>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </div>
-
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Dates & Assignment</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <div className="flex items-center mb-1">
-                  <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                  <span className="font-medium">Purchase Date</span>
-                </div>
-                <p>{formatDate(asset.purchaseDate)}</p>
-              </div>
-              
-              <div>
-                <div className="flex items-center mb-1">
-                  <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
-                  <span className="font-medium">Warranty Expiry</span>
-                </div>
-                <p>{formatDate(asset.warrantyExpiry)}</p>
-              </div>
-              
-              <div>
-                <div className="flex items-center mb-1">
-                  <User className="h-4 w-4 mr-2 text-muted-foreground" />
-                  <span className="font-medium">Assigned To</span>
-                </div>
-                <p>{asset.assignedTo ? asset.assignedTo.name : 'Unassigned'}</p>
-                {asset.assignedTo && (
-                  <p className="text-sm text-muted-foreground">{asset.assignedTo.email}</p>
-                )}
-                {asset.assignedDate && asset.assignedTo && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Since {formatDate(asset.assignedDate)}
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-          
-          {/* Buttons for actions */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button 
-                onClick={() => setIsMaintenanceModalOpen(true)}
-                className="w-full"
-              >
-                <Wrench className="mr-2 h-4 w-4" />
-                Request Maintenance
-              </Button>
-              
-              <RoleBasedAccess allowedRoles={['admin']}>
-                <div className="mt-2 pt-2 border-t">
-                  <p className="text-sm font-medium mb-2">Admin Actions</p>
-                  <div className="space-y-2">
-                    <Button variant="outline" className="w-full">
-                      <Clipboard className="mr-2 h-4 w-4" />
-                      Edit Asset
-                    </Button>
-                  </div>
-                </div>
-              </RoleBasedAccess>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-      
-      {/* Maintenance Request Modal */}
-      <AssetMaintenanceRequest 
-        isOpen={isMaintenanceModalOpen}
-        onClose={() => setIsMaintenanceModalOpen(false)}
-        assetId={asset.id}
-        assetName={asset.name}
-      />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder={
+                            form.watch('type') === 'maintenance' 
+                              ? 'Describe what maintenance is needed...'
+                              : form.watch('type') === 'issue'
+                              ? 'Describe the issue in detail...'
+                              : 'Reason for returning the asset...'
+                          }
+                          className="min-h-[120px]"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      Submit Request
+                    </>
+                  )}
+                </Button>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
 
-export default AssetScanner;
+export default AssetScannerPage;

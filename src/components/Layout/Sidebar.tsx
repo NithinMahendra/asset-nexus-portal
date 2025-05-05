@@ -1,8 +1,6 @@
 
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/providers/AuthProvider';
-import RoleBasedAccess from '@/components/RoleBasedAccess';
 import { 
   LayoutDashboard, 
   Package, 
@@ -13,9 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
-  CreditCard,
-  QrCode,
-  UserCircle
+  CreditCard
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -23,58 +19,21 @@ interface SidebarProps {
   toggleSidebar: () => void;
 }
 
-// Define the navigation item type with an optional special property
-interface NavigationItem {
-  name: string;
-  path: string;
-  icon: React.ReactNode;
-  special?: boolean;
-}
-
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { userRole } = useAuth();
   
-  // Common navigation items for all users
-  const commonNavItems: NavigationItem[] = [
+  const navigationItems = [
     { name: 'Dashboard', path: '/', icon: <LayoutDashboard className="h-5 w-5" /> },
-    { name: 'Notifications', path: '/notifications', icon: <Bell className="h-5 w-5" /> },
-    { name: 'Profile', path: '/profile', icon: <UserCircle className="h-5 w-5" /> },
-    { name: 'Asset Scanner', path: '/asset-scanner/scan', icon: <QrCode className="h-5 w-5" />, special: true },
-  ];
-  
-  // Admin-only navigation items
-  const adminNavItems: NavigationItem[] = [
     { name: 'Assets', path: '/assets', icon: <Package className="h-5 w-5" /> },
     { name: 'Users', path: '/users', icon: <Users className="h-5 w-5" /> },
+    { name: 'Notifications', path: '/notifications', icon: <Bell className="h-5 w-5" /> },
     { name: 'Reports', path: '/reports', icon: <FileText className="h-5 w-5" /> },
     { name: 'Settings', path: '/settings', icon: <Settings className="h-5 w-5" /> },
   ];
 
-  // Combine navigation items based on role
-  const navigationItems = [...commonNavItems, 
-    ...(userRole === 'admin' ? adminNavItems : [])
-  ];
-
   const handleLogout = () => {
     navigate('/logout');
-  };
-
-  const handleAssetScannerClick = (e: React.MouseEvent, path: string) => {
-    if (path === '/asset-scanner/scan') {
-      e.preventDefault();
-      navigate('/');
-      
-      // Small delay to ensure navigation completes first
-      setTimeout(() => {
-        // Create and dispatch a custom event that the Dashboard can listen for
-        const event = new CustomEvent('openAssetScanner', {
-          detail: { open: true }
-        });
-        window.dispatchEvent(event);
-      }, 100);
-    }
   };
 
   return (
@@ -113,7 +72,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
             <Link
               key={item.path}
               to={item.path}
-              onClick={(e) => item.special ? handleAssetScannerClick(e, item.path) : undefined}
               className={cn(
                 "flex items-center px-3 py-2 rounded-md transition-all",
                 location.pathname === item.path
