@@ -1,284 +1,247 @@
-import { useEffect, useState } from 'react';
+
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { getDashboardStats, getCategoryBreakdown, getAssetsByStatus } from '@/services/mockData';
-import { BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from 'recharts';
-import { Package, Users, AlertTriangle, Check, Clock, TrendingUp } from 'lucide-react';
-import { AssetStatus, AssetCategory, CategoryBreakdown } from '@/types';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
-import { getAllAssets } from '@/lib/supabase-utils';
+import { Button } from '@/components/ui/button';
+import { useQuery } from '@tanstack/react-query';
+import { getDashboardStats, getCategoryBreakdown } from '@/services/mockData';
+import { DashboardStats } from '@/types';
+import { Bar, BarChart, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, Legend } from 'recharts';
+import { QrCode } from 'lucide-react';
 import MonthlyAcquisitionChart from '@/components/dashboard/MonthlyAcquisitionChart';
-import { Link } from 'react-router-dom';
+import AssetQRScanner from '@/components/assets/AssetQRScanner';
+import { useAuth } from '@/providers/AuthProvider';
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#FF6B6B'];
-
-const statusColors = {
-  available: 'bg-green-500',
-  assigned: 'bg-blue-500',
-  repair: 'bg-yellow-500',
-  retired: 'bg-gray-500',
-  lost: 'bg-red-500',
-};
-
-const DashboardPage = () => {
-  const [stats, setStats] = useState({
-    totalAssets: 0,
-    totalUsers: 0,
-    needsAttention: 0,
-    utilization: 0
-  });
-  const [categoryData, setCategoryData] = useState<CategoryBreakdown[]>([]);
-  const [statusData, setStatusData] = useState<{ name: string, value: number }[]>([]);
-  const [assets, setAssets] = useState<any[]>([]);
+const Dashboard = () => {
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
+  const { userRole } = useAuth();
   
+  // Listen for the custom event to open the scanner
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        // Fetch real assets from Supabase
-        const realAssets = await getAllAssets();
-        
-        if (realAssets && realAssets.length > 0) {
-          // Calculate stats
-          const totalAssets = realAssets.length;
-          const assignedAssets = realAssets.filter(asset => asset.status === 'assigned').length;
-          // Use 'repair' status to match AssetStatus type
-          const maintenanceAssets = realAssets.filter(asset => asset.status === 'repair').length;
-          const utilization = Math.round((assignedAssets / totalAssets) * 100);
-          
-          // Sort assets by creation date (newest first) for recent assets section
-          const sortedAssets = [...realAssets].sort((a, b) => {
-            const dateA = new Date(a.purchaseDate);
-            const dateB = new Date(b.purchaseDate);
-            return dateB.getTime() - dateA.getTime();
-          });
-          
-          // Update state with real data
-          setAssets(sortedAssets);
-          setStats({
-            totalAssets: realAssets.length,
-            totalUsers: realAssets.filter(asset => asset.status === 'assigned').length,
-            needsAttention: realAssets.filter(asset => asset.status === 'repair').length,
-            utilization: Math.round((realAssets.filter(asset => asset.status === 'assigned').length / realAssets.length) * 100)
-          });
-          
-          // Calculate status breakdown
-          const statusCounts: Record<string, number> = {};
-          
-          realAssets.forEach(asset => {
-            if (!statusCounts[asset.status]) {
-              statusCounts[asset.status] = 0;
-            }
-            statusCounts[asset.status]++;
-          });
-          
-          // Transform to the required format for the chart
-          const formattedStatusData = Object.entries(statusCounts).map(([name, value]) => ({
-            name,
-            value
-          }));
-          
-          setStatusData(formattedStatusData);
-          
-          // Calculate category breakdown
-          const categories: Record<string, number> = {};
-          
-          realAssets.forEach(asset => {
-            if (!categories[asset.category]) {
-              categories[asset.category] = 0;
-            }
-            categories[asset.category]++;
-          });
-          
-          // Cast the category to AssetCategory type and create properly formatted category data
-          const newCategoryData: CategoryBreakdown[] = Object.entries(categories).map(([category, count]) => ({
-            category: category as AssetCategory,
-            count: count,
-            percentage: Math.round((count / realAssets.length) * 100)
-          }));
-          
-          setCategoryData(newCategoryData);
-        } else {
-          // If no real data, fall back to mock data
-          const mockStats = getDashboardStats();
-          setStats({
-            totalAssets: mockStats.totalAssets,
-            totalUsers: mockStats.usersCount,
-            needsAttention: mockStats.repairAssets,
-            utilization: Math.round((mockStats.assignedAssets / mockStats.totalAssets) * 100)
-          });
-          
-          setCategoryData(getCategoryBreakdown());
-          
-          // Get properly formatted status data from mock service
-          const mockStatusData = getAssetsByStatus();
-          setStatusData(mockStatusData);
-        }
-      } catch (error) {
-        console.error("Error fetching dashboard data:", error);
-        // Fall back to mock data on error
-        const mockStats = getDashboardStats();
-        setStats({
-          totalAssets: mockStats.totalAssets,
-          totalUsers: mockStats.usersCount,
-          needsAttention: mockStats.repairAssets,
-          utilization: Math.round((mockStats.assignedAssets / mockStats.totalAssets) * 100)
-        });
-        
-        setCategoryData(getCategoryBreakdown());
-        
-        // Get properly formatted status data from mock service
-        const mockStatusData = getAssetsByStatus();
-        setStatusData(mockStatusData);
-      }
+    const handleOpenScanner = () => {
+      setIsQRScannerOpen(true);
     };
     
-    fetchDashboardData();
+    window.addEventListener('openAssetScanner', handleOpenScanner);
+    
+    return () => {
+      window.removeEventListener('openAssetScanner', handleOpenScanner);
+    };
   }, []);
   
+  const { data: dashboardStats, isLoading } = useQuery({
+    queryKey: ['dashboardStats'],
+    queryFn: getDashboardStats
+  });
+
+  const { data: categoryBreakdown } = useQuery({
+    queryKey: ['categoryBreakdown'],
+    queryFn: getCategoryBreakdown
+  });
+
+  useEffect(() => {
+    if (dashboardStats) {
+      setStats(dashboardStats);
+    }
+  }, [dashboardStats]);
+
+  const COLORS = [
+    '#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', 
+    '#82ca9d', '#ffc658', '#8dd1e1', '#a4de6c', '#d0ed57'
+  ];
+
+  if (isLoading || !stats) {
+    return (
+      <div className="w-full h-64 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+    }).format(value);
+  };
+
+  // Status cards data
+  const statusCards = [
+    { title: 'Available', value: stats.availableAssets, color: 'bg-green-100' },
+    { title: 'Assigned', value: stats.assignedAssets, color: 'bg-blue-100' },
+    { title: 'In Repair', value: stats.repairAssets, color: 'bg-orange-100' },
+    { title: 'Retired', value: stats.retiredAssets, color: 'bg-gray-100' },
+  ];
+
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Welcome back! Here's a summary of your asset management system.
-        </p>
-      </div>
-      
-      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardContent className="p-6 flex flex-row items-center justify-between space-y-0">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Total Assets</p>
-              <p className="text-3xl font-bold">{stats.totalAssets}</p>
-            </div>
-            <Package className="h-10 w-10 text-blue-500" />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6 flex flex-row items-center justify-between space-y-0">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Total Users</p>
-              <p className="text-3xl font-bold">{stats.totalUsers}</p>
-            </div>
-            <Users className="h-10 w-10 text-purple-500" />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6 flex flex-row items-center justify-between space-y-0">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Needs Attention</p>
-              <p className="text-3xl font-bold">{stats.needsAttention}</p>
-            </div>
-            <AlertTriangle className="h-10 w-10 text-yellow-500" />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6 flex flex-row items-center justify-between space-y-0">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Utilization</p>
-              <p className="text-3xl font-bold">{stats.utilization}%</p>
-            </div>
-            <TrendingUp className="h-10 w-10 text-green-500" />
-          </CardContent>
-        </Card>
-      </div>
-      
-      <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
-        {/* Monthly Acquisition Chart */}
-        <MonthlyAcquisitionChart />
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground">
+            Welcome to your asset management dashboard
+          </p>
+        </div>
         
-        <Card className="col-span-3 lg:col-span-1">
-          <CardHeader>
-            <CardTitle>Status Breakdown</CardTitle>
-            <CardDescription>Distribution of assets by status</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={statusData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                    label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {statusData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => [`${value} assets`, 'Count']} />
-                  <Legend verticalAlign="bottom" height={36} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+        {/* QR Code Scanner Button */}
+        <Button 
+          onClick={() => setIsQRScannerOpen(true)}
+          className="bg-primary hover:bg-primary/90 text-white"
+        >
+          <QrCode className="mr-2 h-5 w-5" />
+          Scan Asset QR Code
+        </Button>
       </div>
-      
-      <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
-        <Card>
+
+      {/* Stats Overview */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {statusCards.map((card) => (
+          <Card key={card.title} className={`${card.color}`}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">{card.title} Assets</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{card.value}</div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Main Dashboard Content */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+        {/* Asset Value Card */}
+        <Card className="col-span-3">
           <CardHeader>
-            <CardTitle>Category Breakdown</CardTitle>
-            <CardDescription>Distribution of assets by category</CardDescription>
+            <CardTitle>Asset Value</CardTitle>
+            <CardDescription>Total value of all assets</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={categoryData}>
-                  <XAxis dataKey="category" />
-                  <YAxis />
-                  <Tooltip 
-                    formatter={(value, name, props) => {
-                      return [`${value} assets (${props.payload.percentage}%)`, 'Count'];
-                    }}
-                  />
-                  <Bar 
-                    dataKey="count" 
-                    fill="#8884d8"
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
+          <CardContent className="p-6">
+            <div className="text-4xl font-bold mb-4">
+              {formatCurrency(stats.assetsValueTotal)}
             </div>
+            <MonthlyAcquisitionChart />
           </CardContent>
         </Card>
-        
-        <Card>
+
+        {/* Asset Categories */}
+        <Card className="col-span-4">
           <CardHeader>
-            <CardTitle>Recent Assets</CardTitle>
-            <CardDescription>Recently added or updated assets</CardDescription>
+            <CardTitle>Asset Categories</CardTitle>
+            <CardDescription>Breakdown by category</CardDescription>
           </CardHeader>
-          <CardContent className="max-h-80 overflow-auto">
-            <div className="space-y-4">
-              {assets && assets.length > 0 ? (
-                assets.slice(0, 5).map((asset) => (
-                  <div key={asset.id} className="flex items-center justify-between border-b pb-4">
-                    <div>
-                      <Link to={`/assets/${asset.id}`} className="font-medium hover:text-primary">
-                        {asset.name}
-                      </Link>
-                      <p className="text-muted-foreground text-sm">{asset.serialNumber || 'No serial'}</p>
-                    </div>
-                    <Badge className={cn(statusColors[asset.status as keyof typeof statusColors] || 'bg-gray-500')}>
-                      {asset.status}
-                    </Badge>
+          <CardContent className="p-1">
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <div className="flex">
+                  <div className="w-1/2">
+                    <PieChart width={200} height={300}>
+                      <Pie
+                        data={categoryBreakdown}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="count"
+                        nameKey="category"
+                      >
+                        {categoryBreakdown?.map((entry, index) => (
+                          <Cell 
+                            key={`cell-${index}`} 
+                            fill={COLORS[index % COLORS.length]} 
+                          />
+                        ))}
+                      </Pie>
+                      <Legend />
+                      <Tooltip
+                        formatter={(value, name) => {
+                          return [`${value} assets`, name];
+                        }}
+                      />
+                    </PieChart>
                   </div>
-                ))
-              ) : (
-                <div className="text-center text-muted-foreground py-4">
-                  No assets found
+                  <div className="w-1/2">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        layout="vertical"
+                        data={categoryBreakdown}
+                        margin={{
+                          top: 20,
+                          right: 30,
+                          left: 60,
+                          bottom: 5,
+                        }}
+                      >
+                        <XAxis type="number" />
+                        <YAxis 
+                          dataKey="category" 
+                          type="category" 
+                          width={100} 
+                          tick={{ fontSize: 12 }} 
+                        />
+                        <Tooltip />
+                        <Bar dataKey="count" fill="#8884d8">
+                          {categoryBreakdown?.map((entry, index) => (
+                            <Cell 
+                              key={`cell-${index}`} 
+                              fill={COLORS[index % COLORS.length]} 
+                            />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
-              )}
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Users and Recent Activity */}
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle>User Stats</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <span className="text-muted-foreground">Total Users</span>
+                <p className="text-2xl font-bold">{stats.usersCount}</p>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Recently Assigned</span>
+                <p className="text-2xl font-bold">{stats.recentlyAssigned}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Warranty Expiring */}
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle>Warranty Alerts</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <span className="text-muted-foreground">Expiring Soon</span>
+                <p className="text-2xl font-bold">{stats.warrantyExpiringCount}</p>
+              </div>
+              <Button variant="outline" className="w-full">View Details</Button>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* QR Code Scanner Modal */}
+      <AssetQRScanner 
+        isOpen={isQRScannerOpen}
+        onClose={() => setIsQRScannerOpen(false)}
+      />
     </div>
   );
 };
 
-export default DashboardPage;
+export default Dashboard;
