@@ -23,13 +23,21 @@ interface SidebarProps {
   toggleSidebar: () => void;
 }
 
+// Define the navigation item type with an optional special property
+interface NavigationItem {
+  name: string;
+  path: string;
+  icon: React.ReactNode;
+  special?: boolean;
+}
+
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { userRole } = useAuth();
   
   // Common navigation items for all users
-  const commonNavItems = [
+  const commonNavItems: NavigationItem[] = [
     { name: 'Dashboard', path: '/', icon: <LayoutDashboard className="h-5 w-5" /> },
     { name: 'Notifications', path: '/notifications', icon: <Bell className="h-5 w-5" /> },
     { name: 'Profile', path: '/profile', icon: <UserCircle className="h-5 w-5" /> },
@@ -37,7 +45,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
   ];
   
   // Admin-only navigation items
-  const adminNavItems = [
+  const adminNavItems: NavigationItem[] = [
     { name: 'Assets', path: '/assets', icon: <Package className="h-5 w-5" /> },
     { name: 'Users', path: '/users', icon: <Users className="h-5 w-5" /> },
     { name: 'Reports', path: '/reports', icon: <FileText className="h-5 w-5" /> },

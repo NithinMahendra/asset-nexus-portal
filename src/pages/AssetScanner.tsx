@@ -12,7 +12,7 @@ import { useForm } from 'react-hook-form';
 import { 
   AlertTriangle, 
   Clock, 
-  Wrench, // Replace Tool with Wrench icon
+  Wrench, // Using Wrench instead of Tool
   User,
   Calendar,
   Package,
@@ -72,6 +72,9 @@ const AssetScanner = () => {
 
         if (error) throw error;
         if (data) {
+          // Fix the assigned_to handling by properly checking its type
+          const assignedToData = data.assigned_to;
+          
           setAsset({
             id: data.id,
             name: data.name,
@@ -80,11 +83,12 @@ const AssetScanner = () => {
             purchaseDate: data.purchase_date,
             warrantyExpiry: data.warranty_expiry,
             location: data.location,
-            assignedTo: data.assigned_to ? {
-              id: data.assigned_to.id,
-              name: data.assigned_to.name,
-              email: data.assigned_to.email,
-              role: 'employee' // Add default role to match User type
+            // Check if assigned_to is an object with the needed properties
+            assignedTo: assignedToData && typeof assignedToData === 'object' ? {
+              id: assignedToData.id,
+              name: assignedToData.name,
+              email: assignedToData.email,
+              role: 'employee' // Default role if not specified
             } : undefined,
             assignedDate: data.assigned_date,
             serialNumber: data.serial_number,
