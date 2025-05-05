@@ -96,7 +96,8 @@ export default function AddUserForm({ isOpen, onClose, onSuccess }: AddUserFormP
   }
   
   // If the form is embedded in a page (not in a dialog)
-  if (!isOpen && onClose === (() => {})) {
+  // Fix comparison with empty function - use function reference equality
+  if (!isOpen && typeof onClose === 'function' && onClose.toString() === '() => {}') {
     return (
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">

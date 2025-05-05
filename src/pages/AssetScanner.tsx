@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Asset } from '@/types';
+import { Asset, AssetCategory, AssetStatus } from '@/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,7 +13,7 @@ import { toast } from '@/components/ui/use-toast';
 import { 
   AlertTriangle, 
   Clock, 
-  Tool, 
+  Wrench, // Replace Tool with Wrench icon
   User,
   Calendar,
   Package,
@@ -74,12 +74,17 @@ const AssetScannerPage = () => {
           setAsset({
             id: data.id,
             name: data.name,
-            category: data.category,
-            status: data.status,
+            category: data.category as AssetCategory, // Add type casting
+            status: data.status as AssetStatus, // Add type casting
             purchaseDate: data.purchase_date,
             warrantyExpiry: data.warranty_expiry,
             location: data.location,
-            assignedTo: data.assignedTo,
+            assignedTo: data.assignedTo ? {
+              id: data.assignedTo.id,
+              name: data.assignedTo.name,
+              email: data.assignedTo.email,
+              role: 'employee' // Add default role to match User type
+            } : undefined,
             assignedDate: data.assigned_date,
             serialNumber: data.serial_number,
             model: data.model,
@@ -273,7 +278,7 @@ const AssetScannerPage = () => {
                             onClick={() => field.onChange('maintenance')}
                             className="flex-1"
                           >
-                            <Tool className="mr-2 h-4 w-4" />
+                            <Wrench className="mr-2 h-4 w-4" />
                             Maintenance
                           </Button>
                           <Button

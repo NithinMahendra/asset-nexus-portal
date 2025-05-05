@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { QrReader } from 'react-qr-reader';
 import { 
   Dialog,
@@ -62,7 +62,8 @@ const AssetQRScanner = ({ isOpen, onClose, onSuccess }: AssetQRScannerProps) => 
     }
   };
 
-  const handleError = (error: Error) => {
+  // Define error handler separately to match QrReader props
+  const handleError = (error: unknown) => {
     console.error("QR Scanner error:", error);
     toast({
       title: "Camera Error",
@@ -96,7 +97,7 @@ const AssetQRScanner = ({ isOpen, onClose, onSuccess }: AssetQRScannerProps) => 
                     handleScan(result.getText());
                   }
                 }}
-                onError={handleError}
+                // Remove the onError prop as it's not in the type definition
                 className="w-full h-full"
               />
             )}
