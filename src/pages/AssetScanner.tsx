@@ -71,20 +71,28 @@ const AssetScannerPage = () => {
         if (error) throw error;
         
         if (data) {
+          // Safely extract assignedTo data, checking for null values
+          let assignedToValue = undefined;
+          
+          if (data.assignedTo) {
+            const assignedToData = data.assignedTo;
+            assignedToValue = {
+              id: assignedToData.id,
+              name: assignedToData.name,
+              email: assignedToData.email,
+              role: 'employee' // Add default role to match User type
+            };
+          }
+          
           setAsset({
             id: data.id,
             name: data.name,
-            category: data.category as AssetCategory, // Add type casting
-            status: data.status as AssetStatus, // Add type casting
+            category: data.category as AssetCategory,
+            status: data.status as AssetStatus,
             purchaseDate: data.purchase_date,
             warrantyExpiry: data.warranty_expiry,
             location: data.location,
-            assignedTo: data.assignedTo ? {
-              id: data.assignedTo.id,
-              name: data.assignedTo.name,
-              email: data.assignedTo.email,
-              role: 'employee' // Add default role to match User type
-            } : undefined,
+            assignedTo: assignedToValue,
             assignedDate: data.assigned_date,
             serialNumber: data.serial_number,
             model: data.model,

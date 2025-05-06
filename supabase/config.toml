@@ -1,1 +1,30 @@
+
 project_id = "mtwcufzxuwwlwonohtfk"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[storage]
+enabled = true
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+
+[inbucket]
+enabled = true
+
+[studio]
+enabled = true
+port = 54323
+
+[functions]
+[functions.maintenance-reminder]
+verify_jwt = true
