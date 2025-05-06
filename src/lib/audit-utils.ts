@@ -5,11 +5,11 @@ import { AuditLog } from "@/types/enterprise";
 // Audit log functions (admin only)
 export async function getAuditLogs(): Promise<AuditLog[]> {
   try {
+    // Use a raw SQL query instead of .from() to avoid TypeScript errors
+    // since our tables aren't yet recognized in the TypeScript types
     const { data, error } = await supabase
-      .from('audit_logs')
-      .select('*')
-      .order('changed_at', { ascending: false });
-
+      .rpc('select_from_audit_logs');
+      
     if (error) throw error;
 
     return data.map(log => ({

@@ -57,6 +57,36 @@ export type Database = {
           },
         ]
       }
+      asset_lifecycle_stats: {
+        Row: {
+          avg_age_years: number
+          created_at: string
+          id: string
+          lifecycle_stage: string
+          total_count: number
+          total_value: number
+          updated_at: string
+        }
+        Insert: {
+          avg_age_years?: number
+          created_at?: string
+          id?: string
+          lifecycle_stage: string
+          total_count?: number
+          total_value?: number
+          updated_at?: string
+        }
+        Update: {
+          avg_age_years?: number
+          created_at?: string
+          id?: string
+          lifecycle_stage?: string
+          total_count?: number
+          total_value?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       assets: {
         Row: {
           assigned_date: string | null
@@ -116,6 +146,86 @@ export type Database = {
           },
         ]
       }
+      audit_logs: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          id: string
+          new_data: Json | null
+          old_data: Json | null
+          operation: string
+          record_id: string
+          table_name: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+          operation: string
+          record_id: string
+          table_name: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+          operation?: string
+          record_id?: string
+          table_name?: string
+        }
+        Relationships: []
+      }
+      maintenance_schedule: {
+        Row: {
+          asset_id: string
+          assigned_to: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          maintenance_type: string
+          schedule_date: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          asset_id: string
+          assigned_to?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          maintenance_type: string
+          schedule_date: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          asset_id?: string
+          assigned_to?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          maintenance_type?: string
+          schedule_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_schedule_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -170,11 +280,61 @@ export type Database = {
         }
         Relationships: []
       }
+      vendors: {
+        Row: {
+          address: string | null
+          contact_name: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      get_maintenance_due_soon: {
+        Args: { days_threshold: number }
+        Returns: {
+          maintenance_id: string
+          asset_id: string
+          asset_name: string
+          schedule_date: string
+          maintenance_type: string
+          status: string
+        }[]
+      }
       is_admin: {
         Args: { user_id: string }
         Returns: boolean

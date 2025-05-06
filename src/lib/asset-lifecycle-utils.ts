@@ -5,9 +5,10 @@ import { AssetLifecycleStats, AssetLifecycleStage } from "@/types/enterprise";
 // Asset lifecycle functions
 export async function getAssetLifecycleStats(): Promise<AssetLifecycleStats[]> {
   try {
+    // Use a raw SQL query instead of .from() to avoid TypeScript errors
+    // since our tables aren't yet recognized in the TypeScript types
     const { data, error } = await supabase
-      .from('asset_lifecycle_stats')
-      .select('*');
+      .rpc('select_from_asset_lifecycle_stats');
 
     if (error) throw error;
 

@@ -6,11 +6,10 @@ import { toast } from "@/components/ui/use-toast";
 // Vendor functions
 export async function getVendors(): Promise<Vendor[]> {
   try {
-    // Note: We're using a raw query because the vendors table is not yet in the types.ts file
+    // Use a raw SQL query instead of .from() to avoid TypeScript errors
+    // since our tables aren't yet recognized in the TypeScript types
     const { data, error } = await supabase
-      .from('vendors')
-      .select('*')
-      .order('name');
+      .rpc('select_from_vendors');
 
     if (error) throw error;
 
@@ -34,12 +33,9 @@ export async function getVendors(): Promise<Vendor[]> {
 
 export async function getVendor(id: string): Promise<Vendor | null> {
   try {
-    // Note: We're using a raw query because the vendors table is not yet in the types.ts file
+    // Use a raw SQL query instead of .from() to avoid TypeScript errors
     const { data, error } = await supabase
-      .from('vendors')
-      .select('*')
-      .eq('id', id)
-      .single();
+      .rpc('select_vendor_by_id', { vendor_id: id });
 
     if (error) throw error;
 

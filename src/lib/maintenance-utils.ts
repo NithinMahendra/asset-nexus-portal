@@ -6,22 +6,17 @@ import { toast } from "@/components/ui/use-toast";
 // Maintenance schedule functions
 export async function getMaintenanceSchedules(): Promise<MaintenanceSchedule[]> {
   try {
-    // Note: We're using a raw query because the maintenance_schedule table is not yet in the types.ts file
+    // Use a raw SQL query instead of .from() to avoid TypeScript errors
+    // since our tables aren't yet recognized in the TypeScript types
     const { data, error } = await supabase
-      .from('maintenance_schedule')
-      .select(`
-        *,
-        assets(name),
-        assigned_to:users(id, name, email)
-      `)
-      .order('schedule_date');
+      .rpc('select_from_maintenance_schedule');
 
     if (error) throw error;
 
     return data.map(schedule => ({
       id: schedule.id,
       assetId: schedule.asset_id,
-      assetName: schedule.assets?.name,
+      assetName: schedule.asset_name,
       scheduleDate: schedule.schedule_date,
       maintenanceType: schedule.maintenance_type,
       description: schedule.description || undefined,
@@ -67,19 +62,16 @@ export async function getUpcomingMaintenanceTasks(days: number = 7): Promise<Mai
 
 export async function createMaintenanceTask(taskData: Omit<MaintenanceSchedule, 'id' | 'createdAt' | 'updatedAt'>): Promise<MaintenanceSchedule | null> {
   try {
-    const { data, error } = await supabase
-      .from('maintenance_schedule')
-      .insert({
-        asset_id: taskData.assetId,
-        schedule_date: taskData.scheduleDate,
-        maintenance_type: taskData.maintenanceType,
-        description: taskData.description || null,
-        status: taskData.status,
-        assigned_to: taskData.assignedTo?.id || null,
-        created_by: taskData.createdBy || null
-      })
-      .select()
-      .single();
+    // Use executeQuery instead of .from() to avoid TypeScript errors
+    const { data, error } = await supabase.rpc('insert_maintenance_task', {
+      p_asset_id: taskData.assetId,
+      p_schedule_date: taskData.scheduleDate,
+      p_maintenance_type: taskData.maintenanceType,
+      p_description: taskData.description || null,
+      p_status: taskData.status,
+      p_assigned_to: taskData.assignedTo?.id || null,
+      p_created_by: taskData.createdBy || null
+    });
 
     if (error) throw error;
 
