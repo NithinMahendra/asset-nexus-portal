@@ -14,6 +14,7 @@ import { toast } from "@/components/ui/use-toast";
 // Vendor functions
 export async function getVendors(): Promise<Vendor[]> {
   try {
+    // Note: We're using a raw query because the vendors table is not yet in the types.ts file
     const { data, error } = await supabase
       .from('vendors')
       .select('*')
@@ -41,6 +42,7 @@ export async function getVendors(): Promise<Vendor[]> {
 
 export async function getVendor(id: string): Promise<Vendor | null> {
   try {
+    // Note: We're using a raw query because the vendors table is not yet in the types.ts file
     const { data, error } = await supabase
       .from('vendors')
       .select('*')
@@ -70,6 +72,7 @@ export async function getVendor(id: string): Promise<Vendor | null> {
 // Maintenance schedule functions
 export async function getMaintenanceSchedules(): Promise<MaintenanceSchedule[]> {
   try {
+    // Note: We're using a raw query because the maintenance_schedule table is not yet in the types.ts file
     const { data, error } = await supabase
       .from('maintenance_schedule')
       .select(`
