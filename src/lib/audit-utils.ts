@@ -5,12 +5,18 @@ import { AuditLog } from "@/types/enterprise";
 // Audit log functions (admin only)
 export async function getAuditLogs(): Promise<AuditLog[]> {
   try {
-    // Use a raw SQL query instead of .from() to avoid TypeScript errors
-    // since our tables aren't yet recognized in the TypeScript types
+    // Use RPC to call a stored procedure instead of direct table access
     const { data, error } = await supabase
-      .rpc('select_from_audit_logs');
+      .rpc('get_audit_logs');
       
-    if (error) throw error;
+    if (error) {
+      console.error("Error fetching audit logs:", error);
+      throw error;
+    }
+
+    if (!data) {
+      return [];
+    }
 
     return data.map(log => ({
       id: log.id,

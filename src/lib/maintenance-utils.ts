@@ -6,12 +6,18 @@ import { toast } from "@/components/ui/use-toast";
 // Maintenance schedule functions
 export async function getMaintenanceSchedules(): Promise<MaintenanceSchedule[]> {
   try {
-    // Use a raw SQL query instead of .from() to avoid TypeScript errors
-    // since our tables aren't yet recognized in the TypeScript types
+    // Use RPC to call a stored procedure instead of direct table access
     const { data, error } = await supabase
-      .rpc('select_from_maintenance_schedule');
+      .rpc('get_maintenance_schedules');
 
-    if (error) throw error;
+    if (error) {
+      console.error("Error fetching maintenance schedules:", error);
+      throw error;
+    }
+
+    if (!data) {
+      return [];
+    }
 
     return data.map(schedule => ({
       id: schedule.id,
@@ -42,17 +48,24 @@ export async function getUpcomingMaintenanceTasks(days: number = 7): Promise<Mai
     const { data, error } = await supabase
       .rpc('get_maintenance_due_soon', { days_threshold: days });
 
-    if (error) throw error;
+    if (error) {
+      console.error("Error fetching upcoming maintenance tasks:", error);
+      throw error;
+    }
 
-    return data.map((item: any) => ({
+    if (!data) {
+      return [];
+    }
+
+    return data.map(item => ({
       id: item.maintenance_id,
       assetId: item.asset_id,
       assetName: item.asset_name,
       scheduleDate: item.schedule_date,
       maintenanceType: item.maintenance_type,
       status: item.status as MaintenanceStatus,
-      createdAt: '', // This field is not returned by the function
-      updatedAt: '' // This field is not returned by the function
+      createdAt: '', // These fields may not be returned by the function
+      updatedAt: '' // but are required by the type
     }));
   } catch (error) {
     console.error("Error fetching upcoming maintenance tasks:", error);
@@ -62,8 +75,8 @@ export async function getUpcomingMaintenanceTasks(days: number = 7): Promise<Mai
 
 export async function createMaintenanceTask(taskData: Omit<MaintenanceSchedule, 'id' | 'createdAt' | 'updatedAt'>): Promise<MaintenanceSchedule | null> {
   try {
-    // Use executeQuery instead of .from() to avoid TypeScript errors
-    const { data, error } = await supabase.rpc('insert_maintenance_task', {
+    // Use RPC to call a stored procedure instead of direct table access
+    const { data, error } = await supabase.rpc('create_maintenance_task', {
       p_asset_id: taskData.assetId,
       p_schedule_date: taskData.scheduleDate,
       p_maintenance_type: taskData.maintenanceType,
@@ -73,7 +86,14 @@ export async function createMaintenanceTask(taskData: Omit<MaintenanceSchedule, 
       p_created_by: taskData.createdBy || null
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error("Error creating maintenance task:", error);
+      throw error;
+    }
+
+    if (!data) {
+      return null;
+    }
 
     toast({
       title: "Maintenance Task Created",
@@ -83,10 +103,12 @@ export async function createMaintenanceTask(taskData: Omit<MaintenanceSchedule, 
     return {
       id: data.id,
       assetId: data.asset_id,
+      assetName: taskData.assetName,
       scheduleDate: data.schedule_date,
       maintenanceType: data.maintenance_type,
       description: data.description || undefined,
       status: data.status as MaintenanceStatus,
+      assignedTo: taskData.assignedTo,
       createdAt: data.created_at,
       createdBy: data.created_by || undefined,
       updatedAt: data.updated_at

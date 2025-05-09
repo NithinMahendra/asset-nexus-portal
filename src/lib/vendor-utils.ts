@@ -6,12 +6,18 @@ import { toast } from "@/components/ui/use-toast";
 // Vendor functions
 export async function getVendors(): Promise<Vendor[]> {
   try {
-    // Use a raw SQL query instead of .from() to avoid TypeScript errors
-    // since our tables aren't yet recognized in the TypeScript types
+    // Use RPC to call a stored procedure instead of direct table access
     const { data, error } = await supabase
-      .rpc('select_from_vendors');
+      .rpc('get_vendors');
 
-    if (error) throw error;
+    if (error) {
+      console.error("Error fetching vendors:", error);
+      throw error;
+    }
+
+    if (!data) {
+      return [];
+    }
 
     return data.map(vendor => ({
       id: vendor.id,
@@ -33,11 +39,18 @@ export async function getVendors(): Promise<Vendor[]> {
 
 export async function getVendor(id: string): Promise<Vendor | null> {
   try {
-    // Use a raw SQL query instead of .from() to avoid TypeScript errors
+    // Use RPC to call a stored procedure instead of direct table access
     const { data, error } = await supabase
-      .rpc('select_vendor_by_id', { vendor_id: id });
+      .rpc('get_vendor_by_id', { vendor_id: id });
 
-    if (error) throw error;
+    if (error) {
+      console.error("Error fetching vendor:", error);
+      throw error;
+    }
+
+    if (!data) {
+      return null;
+    }
 
     return {
       id: data.id,
