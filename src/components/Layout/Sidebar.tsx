@@ -1,4 +1,5 @@
 
+import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { 
@@ -15,6 +16,7 @@ import {
   Shield
 } from 'lucide-react';
 import RoleBasedAccess from '../RoleBasedAccess';
+import { UserRole } from '@/types';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -35,7 +37,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
       name: 'Enterprise', 
       path: '/enterprise', 
       icon: <Shield className="h-5 w-5" />,
-      roles: ['admin', 'employee']
+      roles: ['admin', 'employee'] as UserRole[]
     },
     { name: 'Settings', path: '/settings', icon: <Settings className="h-5 w-5" /> },
   ];
