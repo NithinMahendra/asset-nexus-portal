@@ -20,6 +20,7 @@ import { ThemeProvider } from "@/providers/ThemeProvider";
 import { AuthProvider } from "@/providers/AuthProvider";
 import Profile from "@/pages/Profile";
 import AssetScanner from "@/pages/AssetScanner";
+import Enterprise from "@/pages/Enterprise/Enterprise";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +48,7 @@ const App = () => (
               <Route path="/settings" element={<MainLayout><Settings /></MainLayout>} />
               <Route path="/profile" element={<MainLayout><Profile /></MainLayout>} />
               <Route path="/asset-scanner/:assetId" element={<MainLayout><AssetScanner /></MainLayout>} />
+              <Route path="/enterprise" element={<MainLayout><Enterprise /></MainLayout>} />
               
               {/* Catch-all route */}
               <Route path="*" element={<NotFound />} />

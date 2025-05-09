@@ -8,17 +8,19 @@ interface RoleBasedAccessProps {
   allowedRoles: UserRole[];
   children: React.ReactNode;
   fallback?: React.ReactNode;
+  loadingFallback?: React.ReactNode;
 }
 
 const RoleBasedAccess: React.FC<RoleBasedAccessProps> = ({
   allowedRoles,
   children,
   fallback = null,
+  loadingFallback = null,
 }) => {
   const { userRole, isLoading } = useAuth();
   
-  // While loading auth state, render nothing to prevent flash of wrong content
-  if (isLoading) return null;
+  // While loading auth state, render the loading fallback or nothing
+  if (isLoading) return loadingFallback || null;
   
   // Check if user's role is in the allowed roles list
   const hasAccess = userRole && allowedRoles.some(role => 
