@@ -28,9 +28,9 @@ export async function getMaintenanceSchedules(): Promise<MaintenanceSchedule[]> 
       description: schedule.description || undefined,
       status: schedule.status as MaintenanceStatus,
       assignedTo: schedule.assigned_to ? {
-        id: schedule.assigned_to.id,
-        name: schedule.assigned_to.name,
-        email: schedule.assigned_to.email,
+        id: (schedule.assigned_to as any).id,
+        name: (schedule.assigned_to as any).name,
+        email: (schedule.assigned_to as any).email,
         role: 'employee' // Default role
       } : undefined,
       createdAt: schedule.created_at,
