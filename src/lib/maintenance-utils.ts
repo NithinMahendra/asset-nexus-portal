@@ -91,27 +91,29 @@ export async function createMaintenanceTask(taskData: Omit<MaintenanceSchedule, 
       throw error;
     }
 
-    if (!data) {
+    if (!data || !data[0]) {
       return null;
     }
 
+    const result = data[0];
+
     toast({
       title: "Maintenance Task Created",
-      description: `Maintenance scheduled for ${new Date(data.schedule_date).toLocaleDateString()}`,
+      description: `Maintenance scheduled for ${new Date(result.schedule_date).toLocaleDateString()}`,
     });
 
     return {
-      id: data.id,
-      assetId: data.asset_id,
+      id: result.id,
+      assetId: result.asset_id,
       assetName: taskData.assetName,
-      scheduleDate: data.schedule_date,
-      maintenanceType: data.maintenance_type,
-      description: data.description || undefined,
-      status: data.status as MaintenanceStatus,
+      scheduleDate: result.schedule_date,
+      maintenanceType: result.maintenance_type,
+      description: result.description || undefined,
+      status: result.status as MaintenanceStatus,
       assignedTo: taskData.assignedTo,
-      createdAt: data.created_at,
-      createdBy: data.created_by || undefined,
-      updatedAt: data.updated_at
+      createdAt: result.created_at,
+      createdBy: result.created_by || undefined,
+      updatedAt: result.updated_at
     };
   } catch (error: any) {
     console.error("Error creating maintenance task:", error);

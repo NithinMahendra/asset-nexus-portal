@@ -48,21 +48,23 @@ export async function getVendor(id: string): Promise<Vendor | null> {
       throw error;
     }
 
-    if (!data) {
+    if (!data || data.length === 0) {
       return null;
     }
 
+    const vendor = data[0];
+    
     return {
-      id: data.id,
-      name: data.name,
-      contactName: data.contact_name || undefined,
-      email: data.email || undefined,
-      phone: data.phone || undefined,
-      address: data.address || undefined,
-      website: data.website || undefined,
-      notes: data.notes || undefined,
-      createdAt: data.created_at,
-      updatedAt: data.updated_at
+      id: vendor.id,
+      name: vendor.name,
+      contactName: vendor.contact_name || undefined,
+      email: vendor.email || undefined,
+      phone: vendor.phone || undefined,
+      address: vendor.address || undefined,
+      website: vendor.website || undefined,
+      notes: vendor.notes || undefined,
+      createdAt: vendor.created_at,
+      updatedAt: vendor.updated_at
     };
   } catch (error) {
     console.error("Error fetching vendor:", error);

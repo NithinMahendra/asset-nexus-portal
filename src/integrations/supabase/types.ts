@@ -324,6 +324,53 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_maintenance_task: {
+        Args: {
+          p_asset_id: string
+          p_schedule_date: string
+          p_maintenance_type: string
+          p_description: string
+          p_status: string
+          p_assigned_to: string
+          p_created_by: string
+        }
+        Returns: {
+          id: string
+          asset_id: string
+          schedule_date: string
+          maintenance_type: string
+          description: string
+          status: string
+          created_by: string
+          created_at: string
+          updated_at: string
+        }[]
+      }
+      get_asset_lifecycle_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          lifecycle_stage: string
+          total_count: number
+          avg_age_years: number
+          total_value: number
+          created_at: string
+          updated_at: string
+        }[]
+      }
+      get_audit_logs: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          table_name: string
+          record_id: string
+          operation: string
+          old_data: Json
+          new_data: Json
+          changed_by: string
+          changed_at: string
+        }[]
+      }
       get_maintenance_due_soon: {
         Args: { days_threshold: number }
         Returns: {
@@ -333,6 +380,52 @@ export type Database = {
           schedule_date: string
           maintenance_type: string
           status: string
+        }[]
+      }
+      get_maintenance_schedules: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          asset_id: string
+          asset_name: string
+          schedule_date: string
+          maintenance_type: string
+          description: string
+          status: string
+          assigned_to: Json
+          created_by: string
+          created_at: string
+          updated_at: string
+        }[]
+      }
+      get_vendor_by_id: {
+        Args: { vendor_id: string }
+        Returns: {
+          id: string
+          name: string
+          contact_name: string
+          email: string
+          phone: string
+          address: string
+          website: string
+          notes: string
+          created_at: string
+          updated_at: string
+        }[]
+      }
+      get_vendors: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          name: string
+          contact_name: string
+          email: string
+          phone: string
+          address: string
+          website: string
+          notes: string
+          created_at: string
+          updated_at: string
         }[]
       }
       is_admin: {
