@@ -1,7 +1,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
-import { checkAdminRole, getUserRole } from "@/lib/auth-utils";
+import { checkAdminRole, getUserRole, setupAutoLogout } from "@/lib/auth-utils";
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AuthChangeEvent, Session, User } from '@supabase/supabase-js';
 import { UserRole } from "@/types";
@@ -98,24 +98,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(session.user);
         setSession(session);
         
-        // Get user role
-        const role = await getUserRole(session.user.id);
-        setUserRole(role);
-        
-        // Check if user is an admin
-        const adminStatus = await checkAdminRole(session.user.id);
-        setIsAdmin(adminStatus);
-        
-        // Don't redirect on signup
-        if (event === 'SIGNED_UP' as AuthChangeEvent) {
-          return;
-        }
-        
-        // Only redirect if not on auth pages and not authenticated with appropriate role
-        const isAuthPage = location.pathname.startsWith('/auth');
-        if (!isAuthPage && !role) {
-          navigate('/auth/login');
-        }
+        // Get user role - to prevent potential deadlocks, we use setTimeout
+        setTimeout(async () => {
+          const role = await getUserRole(session.user.id);
+          setUserRole(role);
+          
+          // Check if user is an admin
+          const adminStatus = await checkAdminRole(session.user.id);
+          setIsAdmin(adminStatus);
+          
+          // Don't redirect on signup
+          if (event === 'SIGNED_UP' as AuthChangeEvent) {
+            return;
+          }
+          
+          // Only redirect if not on auth pages and not authenticated with appropriate role
+          const isAuthPage = location.pathname.startsWith('/auth');
+          if (!isAuthPage && !role) {
+            navigate('/auth/login');
+          }
+        }, 0);
       } else {
         setUser(null);
         setSession(null);
@@ -138,8 +140,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     );
 
+    // Set up auto logout after inactivity (15 minutes)
+    const cleanupAutoLogout = setupAutoLogout(15 * 60 * 1000);
+
     checkAuth();
-    return () => subscription.unsubscribe();
+    
+    return () => {
+      subscription.unsubscribe();
+      cleanupAutoLogout();
+    };
   }, [navigate, location.pathname]);
 
   return (

@@ -53,7 +53,13 @@ const LoginPage = () => {
             title: "Login successful",
             description: `Welcome back, ${userRole}!`,
           });
-          navigate("/");
+          
+          // Redirect based on role
+          if (userRole === 'admin') {
+            navigate("/enterprise"); // Admin dashboard
+          } else {
+            navigate("/"); // Regular user dashboard
+          }
         } else {
           toast({
             title: "Access denied",

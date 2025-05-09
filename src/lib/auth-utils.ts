@@ -45,3 +45,45 @@ export const hasRolePermission = (userRole: UserRole | null, requiredRole: UserR
   
   return roleHierarchy[userRole] >= roleHierarchy[requiredRole];
 };
+
+// Check if current session is active and valid
+export const checkSessionValid = async (): Promise<boolean> => {
+  try {
+    const { data } = await supabase.auth.getSession();
+    return !!data.session;
+  } catch (error) {
+    console.error('Error checking session:', error);
+    return false;
+  }
+};
+
+// Auto logout after inactivity (time in milliseconds)
+export const setupAutoLogout = (timeout: number = 15 * 60 * 1000): (() => void) => {
+  let inactivityTimer: number | undefined;
+  
+  const resetTimer = () => {
+    if (inactivityTimer) clearTimeout(inactivityTimer);
+    inactivityTimer = window.setTimeout(async () => {
+      console.log('Auto logout due to inactivity');
+      await supabase.auth.signOut();
+      window.location.href = '/auth/login';
+    }, timeout);
+  };
+  
+  // Set up event listeners for user activity
+  const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+  activityEvents.forEach(event => {
+    document.addEventListener(event, resetTimer);
+  });
+  
+  // Start the initial timer
+  resetTimer();
+  
+  // Return cleanup function
+  return () => {
+    if (inactivityTimer) clearTimeout(inactivityTimer);
+    activityEvents.forEach(event => {
+      document.removeEventListener(event, resetTimer);
+    });
+  };
+};
