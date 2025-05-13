@@ -29,10 +29,14 @@ const RoleBasedAccess: React.FC<RoleBasedAccessProps> = ({
   // While loading auth state, render the loading fallback or nothing
   if (isLoading) return loadingFallback || null;
   
+  console.log("RoleBasedAccess: user role:", userRole, "allowed roles:", allowedRoles);
+  
   // Check if user's role is in the allowed roles list
   const hasAccess = userRole && allowedRoles.some(role => 
     hasRolePermission(userRole, role)
   );
+  
+  console.log("RoleBasedAccess: hasAccess:", hasAccess);
   
   if (!hasAccess) {
     if (redirectTo) {

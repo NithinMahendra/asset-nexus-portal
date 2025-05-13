@@ -46,12 +46,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   useEffect(() => {
+    console.log("Auth Provider initialized with current path:", location.pathname);
+    
     const checkAuth = async () => {
       try {
         setIsLoading(true);
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session?.user) {
+          console.log("Session found for user:", session.user.email);
           setUser(session.user);
           setSession(session);
           
@@ -61,15 +64,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           
           const [role, adminStatus] = await Promise.all([rolePromise, adminStatusPromise]);
           
+          console.log("User role from database:", role);
+          console.log("User is admin:", adminStatus);
+          
           setUserRole(role);
           setIsAdmin(adminStatus);
           
           // Only redirect if not on auth pages and not authenticated with appropriate role
           const isAuthPage = location.pathname.startsWith('/auth');
           if (!isAuthPage && !role) {
+            console.log("No role assigned, redirecting to login");
             navigate('/auth/login');
           }
         } else {
+          console.log("No session found, clearing auth state");
           setUser(null);
           setSession(null);
           setIsAdmin(false);
@@ -78,6 +86,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           // Only redirect if not on auth pages
           const isAuthPage = location.pathname.startsWith('/auth');
           if (!isAuthPage) {
+            console.log("Not on auth page, redirecting to login");
             navigate('/auth/login');
           }
         }
@@ -105,6 +114,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     const handleAuthChange = async (event: AuthChangeEvent, session: Session | null) => {
+      console.log("Auth state change:", event);
       if (session?.user) {
         setUser(session.user);
         setSession(session);
@@ -112,10 +122,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // Get user role - to prevent potential deadlocks, we use setTimeout
         setTimeout(async () => {
           const role = await getUserRole(session.user.id);
+          console.log("User role after auth change:", role);
           setUserRole(role);
           
           // Check if user is an admin
           const adminStatus = await checkAdminRole(session.user.id);
+          console.log("Admin status after auth change:", adminStatus);
           setIsAdmin(adminStatus);
           
           // Don't redirect on signup
@@ -123,10 +135,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             return;
           }
           
-          // Only redirect if not on auth pages and not authenticated with appropriate role
+          // Redirect based on role if not on auth pages
           const isAuthPage = location.pathname.startsWith('/auth');
-          if (!isAuthPage && !role) {
-            navigate('/auth/login');
+          if (!isAuthPage) {
+            if (role === 'admin') {
+              console.log("Admin user detected, redirecting to enterprise dashboard");
+              navigate('/enterprise');
+            } else if (role === 'employee') {
+              console.log("Employee user detected, redirecting to main dashboard");
+              navigate('/');
+            } else {
+              console.log("No role assigned, redirecting to login");
+              navigate('/auth/login');
+            }
           }
         }, 0);
       } else {

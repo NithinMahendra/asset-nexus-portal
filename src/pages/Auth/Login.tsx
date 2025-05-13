@@ -36,6 +36,8 @@ const LoginPage = () => {
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     try {
+      console.log("Attempting login with:", data.email);
+      
       const { data: authData, error } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,
@@ -46,7 +48,13 @@ const LoginPage = () => {
       }
 
       if (authData.user) {
+        console.log("Login successful, fetching user role");
+        
+        // Clear any cached role data by forcing a new request
+        localStorage.removeItem('supabase.auth.token');
+        
         const userRole = await getUserRole(authData.user.id);
+        console.log("User role:", userRole);
         
         if (userRole) {
           toast({
@@ -56,11 +64,14 @@ const LoginPage = () => {
           
           // Redirect based on role
           if (userRole === 'admin') {
+            console.log("Redirecting admin to enterprise dashboard");
             navigate("/enterprise"); // Admin dashboard
           } else {
+            console.log("Redirecting user to main dashboard");
             navigate("/"); // Regular user dashboard
           }
         } else {
+          console.log("No role assigned to user");
           toast({
             title: "Access denied",
             description: "No role assigned. Please contact an administrator.",
@@ -73,6 +84,7 @@ const LoginPage = () => {
         }
       }
     } catch (error: any) {
+      console.error("Login error:", error);
       toast({
         title: "Login failed",
         description: error.message || "An error occurred during login",

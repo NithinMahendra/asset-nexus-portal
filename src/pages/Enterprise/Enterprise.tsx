@@ -37,25 +37,17 @@ const Enterprise: React.FC = () => {
   
   // If no user role is assigned, redirect to login
   if (!userRole) {
+    console.log("No user role assigned, redirecting to login");
     return <Navigate to="/auth/login" replace />;
   }
   
-  // Render the appropriate dashboard based on user role with RoleBasedAccess component
+  console.log("Enterprise: rendering dashboard for role:", userRole);
+  
+  // Render the appropriate dashboard based on user role
   return (
     <>
-      <RoleBasedAccess 
-        allowedRoles={['admin']} 
-        redirectTo="/enterprise"
-      >
-        <AdminDashboard />
-      </RoleBasedAccess>
-      
-      <RoleBasedAccess 
-        allowedRoles={['employee']} 
-        redirectTo="/auth/login"
-      >
-        <UserDashboard />
-      </RoleBasedAccess>
+      {userRole === 'admin' && <AdminDashboard />}
+      {userRole === 'employee' && <UserDashboard />}
     </>
   );
 };

@@ -4,34 +4,48 @@ import { supabase } from '@/integrations/supabase/client';
 
 // Check if user has admin role
 export const checkAdminRole = async (userId: string): Promise<boolean> => {
-  const { data, error } = await supabase
-    .from('user_roles')
-    .select('role')
-    .eq('user_id', userId)
-    .single();
+  console.log("Checking admin role for user:", userId);
+  try {
+    const { data, error } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .single();
 
-  if (error) {
-    console.error('Error checking admin role:', error);
+    if (error) {
+      console.error('Error checking admin role:', error);
+      return false;
+    }
+
+    console.log("Admin role check result:", data);
+    return data?.role === 'admin';
+  } catch (err) {
+    console.error('Unexpected error checking admin role:', err);
     return false;
   }
-
-  return data?.role === 'admin';
 };
 
 // Get the specific role of a user
 export const getUserRole = async (userId: string): Promise<UserRole | null> => {
-  const { data, error } = await supabase
-    .from('user_roles')
-    .select('role')
-    .eq('user_id', userId)
-    .single();
+  console.log("Getting user role for user:", userId);
+  try {
+    const { data, error } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .single();
 
-  if (error) {
-    console.error('Error getting user role:', error);
+    if (error) {
+      console.error('Error getting user role:', error);
+      return null;
+    }
+
+    console.log("User role result:", data);
+    return data?.role as UserRole || null;
+  } catch (err) {
+    console.error('Unexpected error getting user role:', err);
     return null;
   }
-
-  return data?.role as UserRole || null;
 };
 
 // Check if the user has at least the specified role level
@@ -91,6 +105,7 @@ export const setupAutoLogout = (timeout: number = 15 * 60 * 1000): (() => void) 
 // New function to assign a role to a user
 export const assignRoleToUser = async (userId: string, role: UserRole): Promise<boolean> => {
   try {
+    console.log("Assigning role to user:", userId, role);
     const { error } = await supabase
       .from('user_roles')
       .upsert({ user_id: userId, role }, { onConflict: 'user_id' });
@@ -100,9 +115,25 @@ export const assignRoleToUser = async (userId: string, role: UserRole): Promise<
       return false;
     }
     
+    console.log("Role assigned successfully");
     return true;
   } catch (error) {
     console.error('Unexpected error assigning role:', error);
     return false;
+  }
+};
+
+// Function to clear auth cache - useful when role changes
+export const clearAuthCache = async (): Promise<void> => {
+  try {
+    // Remove any cached auth data
+    localStorage.removeItem('supabase.auth.token');
+    
+    // Force refresh the session
+    await supabase.auth.refreshSession();
+    
+    console.log("Auth cache cleared successfully");
+  } catch (error) {
+    console.error('Error clearing auth cache:', error);
   }
 };

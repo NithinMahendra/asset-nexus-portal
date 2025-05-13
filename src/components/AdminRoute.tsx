@@ -1,8 +1,9 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/providers/AuthProvider';
 import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from '@/components/ui/use-toast';
 
 interface AdminRouteProps {
   children?: React.ReactNode;
@@ -13,7 +14,18 @@ const AdminRoute: React.FC<AdminRouteProps> = ({
   children, 
   redirectTo = '/auth/login' 
 }) => {
-  const { isAdmin, isLoading } = useAuth();
+  const { isAdmin, isLoading, userRole } = useAuth();
+  
+  useEffect(() => {
+    if (!isLoading && !isAdmin && userRole) {
+      // If user is logged in but not admin
+      toast({
+        title: "Access Denied",
+        description: "You don't have permission to access this area.",
+        variant: "destructive",
+      });
+    }
+  }, [isLoading, isAdmin, userRole]);
 
   if (isLoading) {
     return (
@@ -29,10 +41,13 @@ const AdminRoute: React.FC<AdminRouteProps> = ({
     );
   }
 
+  // Check if user is admin, if not redirect
   if (!isAdmin) {
+    console.log("Access denied: User is not an admin, redirecting to", redirectTo);
     return <Navigate to={redirectTo} replace />;
   }
 
+  console.log("Admin access granted");
   return children ? <>{children}</> : <Outlet />;
 };
 
