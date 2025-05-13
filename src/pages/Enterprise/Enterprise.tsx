@@ -6,6 +6,7 @@ import UserDashboard from './UserDashboard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Navigate } from 'react-router-dom';
 import { toast } from '@/components/ui/use-toast';
+import RoleBasedAccess from '@/components/RoleBasedAccess';
 
 const Enterprise: React.FC = () => {
   const { userRole, isLoading, user } = useAuth();
@@ -39,8 +40,24 @@ const Enterprise: React.FC = () => {
     return <Navigate to="/auth/login" replace />;
   }
   
-  // Render the appropriate dashboard based on user role
-  return userRole === 'admin' ? <AdminDashboard /> : <UserDashboard />;
+  // Render the appropriate dashboard based on user role with RoleBasedAccess component
+  return (
+    <>
+      <RoleBasedAccess 
+        allowedRoles={['admin']} 
+        redirectTo="/enterprise"
+      >
+        <AdminDashboard />
+      </RoleBasedAccess>
+      
+      <RoleBasedAccess 
+        allowedRoles={['employee']} 
+        redirectTo="/auth/login"
+      >
+        <UserDashboard />
+      </RoleBasedAccess>
+    </>
+  );
 };
 
 export default Enterprise;

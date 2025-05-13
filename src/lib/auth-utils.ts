@@ -87,3 +87,22 @@ export const setupAutoLogout = (timeout: number = 15 * 60 * 1000): (() => void) 
     });
   };
 };
+
+// New function to assign a role to a user
+export const assignRoleToUser = async (userId: string, role: UserRole): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('user_roles')
+      .upsert({ user_id: userId, role }, { onConflict: 'user_id' });
+    
+    if (error) {
+      console.error('Error assigning role:', error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Unexpected error assigning role:', error);
+    return false;
+  }
+};

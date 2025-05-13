@@ -5,6 +5,7 @@ import { UserRole } from '@/types';
 import { hasRolePermission } from '@/lib/auth-utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
+import { Navigate } from 'react-router-dom';
 
 interface RoleBasedAccessProps {
   allowedRoles: UserRole[];
@@ -12,6 +13,7 @@ interface RoleBasedAccessProps {
   fallback?: React.ReactNode;
   loadingFallback?: React.ReactNode;
   showAlert?: boolean;
+  redirectTo?: string;
 }
 
 const RoleBasedAccess: React.FC<RoleBasedAccessProps> = ({
@@ -20,6 +22,7 @@ const RoleBasedAccess: React.FC<RoleBasedAccessProps> = ({
   fallback = null,
   loadingFallback = null,
   showAlert = false,
+  redirectTo,
 }) => {
   const { userRole, isLoading } = useAuth();
   
@@ -31,19 +34,27 @@ const RoleBasedAccess: React.FC<RoleBasedAccessProps> = ({
     hasRolePermission(userRole, role)
   );
   
-  if (!hasAccess && showAlert) {
-    return (
-      <Alert variant="destructive" className="mb-4">
-        <AlertTriangle className="h-4 w-4" />
-        <AlertTitle>Access Denied</AlertTitle>
-        <AlertDescription>
-          You don't have permission to access this feature.
-        </AlertDescription>
-      </Alert>
-    );
+  if (!hasAccess) {
+    if (redirectTo) {
+      return <Navigate to={redirectTo} />;
+    }
+    
+    if (showAlert) {
+      return (
+        <Alert variant="destructive" className="mb-4">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Access Denied</AlertTitle>
+          <AlertDescription>
+            You don't have permission to access this feature.
+          </AlertDescription>
+        </Alert>
+      );
+    }
+    
+    return fallback;
   }
   
-  return <>{hasAccess ? children : fallback}</>;
+  return <>{children}</>;
 };
 
 export default RoleBasedAccess;

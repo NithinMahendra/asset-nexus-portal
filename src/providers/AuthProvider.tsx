@@ -13,6 +13,7 @@ interface AuthContextType {
   isAdmin: boolean;
   userRole: UserRole | null;
   isLoading: boolean;
+  refreshUserRole: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -20,7 +21,8 @@ const AuthContext = createContext<AuthContextType>({
   session: null,
   isAdmin: false,
   userRole: null,
-  isLoading: true
+  isLoading: true,
+  refreshUserRole: async () => {}
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -33,6 +35,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Function to refresh user role (useful after role changes)
+  const refreshUserRole = async () => {
+    if (user) {
+      const role = await getUserRole(user.id);
+      setUserRole(role);
+      setIsAdmin(role === 'admin');
+    }
+  };
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -152,7 +163,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [navigate, location.pathname]);
 
   return (
-    <AuthContext.Provider value={{ user, session, isAdmin, userRole, isLoading }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      session, 
+      isAdmin, 
+      userRole, 
+      isLoading,
+      refreshUserRole
+    }}>
       {children}
     </AuthContext.Provider>
   );

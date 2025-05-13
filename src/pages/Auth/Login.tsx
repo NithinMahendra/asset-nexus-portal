@@ -51,7 +51,7 @@ const LoginPage = () => {
         if (userRole) {
           toast({
             title: "Login successful",
-            description: `Welcome back, ${userRole}!`,
+            description: `Welcome back! You're logged in as ${userRole}.`,
           });
           
           // Redirect based on role
