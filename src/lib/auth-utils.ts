@@ -109,12 +109,35 @@ export const setupAutoLogout = (timeout: number = 15 * 60 * 1000): (() => void) 
 export const assignRoleToUser = async (userId: string, role: UserRole): Promise<boolean> => {
   try {
     console.log("Assigning role to user:", userId, role);
-    const { error } = await supabase
-      .from('user_roles')
-      .upsert({ user_id: userId, role }, { onConflict: 'user_id' });
     
-    if (error) {
-      console.error('Error assigning role:', error);
+    // First check if there's an existing role that needs updating
+    const { data: existingRole, error: checkError } = await supabase
+      .from('user_roles')
+      .select('id, role')
+      .eq('user_id', userId)
+      .single();
+    
+    if (checkError && checkError.code !== 'PGRST116') { // Not found error is fine
+      console.error('Error checking existing role:', checkError);
+    }
+    
+    let result;
+    
+    if (existingRole) {
+      console.log("Updating existing role:", existingRole.id, "from", existingRole.role, "to", role);
+      result = await supabase
+        .from('user_roles')
+        .update({ role })
+        .eq('id', existingRole.id);
+    } else {
+      console.log("Creating new role assignment for user");
+      result = await supabase
+        .from('user_roles')
+        .insert({ user_id: userId, role });
+    }
+    
+    if (result.error) {
+      console.error('Error assigning role:', result.error);
       return false;
     }
     

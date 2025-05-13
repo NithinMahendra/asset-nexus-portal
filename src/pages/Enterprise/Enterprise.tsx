@@ -8,6 +8,7 @@ import { Navigate } from 'react-router-dom';
 import { toast } from '@/components/ui/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
+import RoleBasedAccess from '@/components/RoleBasedAccess';
 
 const Enterprise: React.FC = () => {
   const { userRole, isLoading, user } = useAuth();
@@ -19,8 +20,14 @@ const Enterprise: React.FC = () => {
         description: `You're logged in as ${userRole}`,
         duration: 3000,
       });
+    } else if (!isLoading && !userRole && user) {
+      toast({
+        title: "Role Assignment Error",
+        description: "No role has been assigned to your account. Please contact an administrator.",
+        variant: "destructive",
+      });
     }
-  }, [isLoading, userRole]);
+  }, [isLoading, userRole, user]);
   
   if (isLoading) {
     return (
@@ -36,32 +43,48 @@ const Enterprise: React.FC = () => {
     );
   }
   
-  // If no user role is assigned, redirect to login
-  if (!userRole) {
-    console.log("No user role assigned, redirecting to login");
+  // If no user is logged in, redirect to login
+  if (!user) {
+    console.log("No user logged in, redirecting to login");
     return <Navigate to="/auth/login" replace />;
   }
   
-  console.log("Enterprise: rendering dashboard for role:", userRole);
-  
-  // Render the appropriate dashboard based on user role
-  if (userRole === 'admin') {
-    return <AdminDashboard />;
-  } else if (userRole === 'employee') {
-    return <UserDashboard />;
-  } else {
+  // If user exists but no role is assigned
+  if (user && !userRole) {
     return (
       <div className="p-6">
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Invalid Role</AlertTitle>
+          <AlertTitle>No Role Assigned</AlertTitle>
           <AlertDescription>
-            You have an unrecognized role: {userRole}. Please contact an administrator.
+            Your account doesn't have a role assigned. Please contact an administrator.
+            <p className="mt-2">User ID: {user.id}</p>
           </AlertDescription>
         </Alert>
       </div>
     );
   }
+  
+  console.log("Enterprise: rendering dashboard for role:", userRole);
+  
+  // Render the appropriate dashboard based on user role
+  return (
+    <>
+      <RoleBasedAccess 
+        allowedRoles={['admin']} 
+        showAlert={true}
+      >
+        <AdminDashboard />
+      </RoleBasedAccess>
+      
+      <RoleBasedAccess 
+        allowedRoles={['employee']} 
+        showAlert={true}
+      >
+        <UserDashboard />
+      </RoleBasedAccess>
+    </>
+  );
 };
 
 export default Enterprise;
