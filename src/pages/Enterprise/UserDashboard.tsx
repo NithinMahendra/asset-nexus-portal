@@ -1,19 +1,20 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Package, QrCode, Wrench, User } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/providers/AuthProvider';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import RoleBasedAccess from '@/components/RoleBasedAccess';
 
 const UserDashboard: React.FC = () => {
   const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState('my-assets');
   
-  // Here we would query for user-specific assets and maintenance requests
-  // This is a placeholder for now
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+  };
   
   return (
     <RoleBasedAccess
@@ -35,7 +36,7 @@ const UserDashboard: React.FC = () => {
           </div>
         </div>
         
-        <Tabs defaultValue="my-assets" className="space-y-4">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
           <TabsList>
             <TabsTrigger value="my-assets">My Assets</TabsTrigger>
             <TabsTrigger value="maintenance">Maintenance Requests</TabsTrigger>
