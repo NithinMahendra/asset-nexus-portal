@@ -36,7 +36,7 @@ const UserDashboard: React.FC = () => {
           </div>
         </div>
         
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
+        <Tabs defaultValue="my-assets" value={activeTab} onValueChange={handleTabChange} className="space-y-4">
           <TabsList>
             <TabsTrigger value="my-assets">My Assets</TabsTrigger>
             <TabsTrigger value="maintenance">Maintenance Requests</TabsTrigger>
