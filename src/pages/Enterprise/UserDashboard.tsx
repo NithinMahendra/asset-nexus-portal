@@ -1,44 +1,19 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Package, QrCode, Wrench, User } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/providers/AuthProvider';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import RoleBasedAccess from '@/components/RoleBasedAccess';
-import { useLocation, useNavigate } from 'react-router-dom';
 
 const UserDashboard: React.FC = () => {
   const { user } = useAuth();
-  const location = useLocation();
-  const navigate = useNavigate();
   
-  // Get tab from URL query params if present, otherwise default to 'my-assets'
-  const queryParams = new URLSearchParams(location.search);
-  const tabFromUrl = queryParams.get('tab');
-  const [activeTab, setActiveTab] = useState<string>(tabFromUrl || 'my-assets');
-  
-  console.log("UserDashboard: Current active tab:", activeTab, "Tab from URL:", tabFromUrl);
-  
-  const handleTabChange = (value: string) => {
-    console.log("UserDashboard: Tab changed to:", value);
-    setActiveTab(value);
-    
-    // Update URL with the selected tab without page reload
-    const params = new URLSearchParams(location.search);
-    params.set('tab', value);
-    navigate(`/enterprise?${params.toString()}`, { replace: true });
-  };
-  
-  // Sync tab with URL if it changes externally
-  useEffect(() => {
-    const tabInUrl = queryParams.get('tab');
-    if (tabInUrl && tabInUrl !== activeTab) {
-      console.log("UserDashboard: Syncing tab state from URL:", tabInUrl);
-      setActiveTab(tabInUrl);
-    }
-  }, [location.search, queryParams, activeTab]);
+  // Here we would query for user-specific assets and maintenance requests
+  // This is a placeholder for now
   
   return (
     <RoleBasedAccess
@@ -60,7 +35,7 @@ const UserDashboard: React.FC = () => {
           </div>
         </div>
         
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
+        <Tabs defaultValue="my-assets" className="space-y-4">
           <TabsList>
             <TabsTrigger value="my-assets">My Assets</TabsTrigger>
             <TabsTrigger value="maintenance">Maintenance Requests</TabsTrigger>
