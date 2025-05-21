@@ -1,10 +1,9 @@
-
 import React, { useEffect } from 'react';
 import { useAuth } from '@/providers/AuthProvider';
 import AdminDashboard from './AdminDashboard';
 import UserDashboard from './UserDashboard';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { toast } from '@/components/ui/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
@@ -12,6 +11,7 @@ import RoleBasedAccess from '@/components/RoleBasedAccess';
 
 const Enterprise: React.FC = () => {
   const { userRole, isLoading, user } = useAuth();
+  const location = useLocation();
   
   useEffect(() => {
     if (!isLoading && userRole) {
@@ -68,6 +68,7 @@ const Enterprise: React.FC = () => {
   console.log("Enterprise: rendering dashboard for role:", userRole);
   
   // Render the appropriate dashboard based on user role
+  // Keep the query parameters when rendering the dashboard
   return (
     <>
       <RoleBasedAccess 

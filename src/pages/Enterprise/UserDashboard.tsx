@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -7,14 +7,34 @@ import { Package, QrCode, Wrench, User } from 'lucide-react';
 import { useAuth } from '@/providers/AuthProvider';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import RoleBasedAccess from '@/components/RoleBasedAccess';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const UserDashboard: React.FC = () => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('my-assets');
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  // Get tab from URL query params if present, otherwise default to 'my-assets'
+  const queryParams = new URLSearchParams(location.search);
+  const tabFromUrl = queryParams.get('tab');
+  const [activeTab, setActiveTab] = useState<string>(tabFromUrl || 'my-assets');
   
   const handleTabChange = (value: string) => {
     setActiveTab(value);
+    
+    // Update URL with the selected tab without page reload
+    const params = new URLSearchParams(location.search);
+    params.set('tab', value);
+    navigate(`${location.pathname}?${params.toString()}`, { replace: true });
   };
+  
+  // Sync tab with URL if it changes externally
+  useEffect(() => {
+    const tabInUrl = queryParams.get('tab');
+    if (tabInUrl && tabInUrl !== activeTab) {
+      setActiveTab(tabInUrl);
+    }
+  }, [location.search]);
   
   return (
     <RoleBasedAccess
@@ -36,7 +56,7 @@ const UserDashboard: React.FC = () => {
           </div>
         </div>
         
-        <Tabs defaultValue="my-assets" value={activeTab} onValueChange={handleTabChange} className="space-y-4">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
           <TabsList>
             <TabsTrigger value="my-assets">My Assets</TabsTrigger>
             <TabsTrigger value="maintenance">Maintenance Requests</TabsTrigger>
