@@ -19,22 +19,26 @@ const UserDashboard: React.FC = () => {
   const tabFromUrl = queryParams.get('tab');
   const [activeTab, setActiveTab] = useState<string>(tabFromUrl || 'my-assets');
   
+  console.log("UserDashboard: Current active tab:", activeTab, "Tab from URL:", tabFromUrl);
+  
   const handleTabChange = (value: string) => {
+    console.log("UserDashboard: Tab changed to:", value);
     setActiveTab(value);
     
     // Update URL with the selected tab without page reload
     const params = new URLSearchParams(location.search);
     params.set('tab', value);
-    navigate(`${location.pathname}?${params.toString()}`, { replace: true });
+    navigate(`/enterprise?${params.toString()}`, { replace: true });
   };
   
   // Sync tab with URL if it changes externally
   useEffect(() => {
     const tabInUrl = queryParams.get('tab');
     if (tabInUrl && tabInUrl !== activeTab) {
+      console.log("UserDashboard: Syncing tab state from URL:", tabInUrl);
       setActiveTab(tabInUrl);
     }
-  }, [location.search]);
+  }, [location.search, queryParams, activeTab]);
   
   return (
     <RoleBasedAccess

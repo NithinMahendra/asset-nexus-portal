@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -10,9 +9,17 @@ import { getAuditLogs } from '@/lib/audit-utils';
 import { getMaintenanceSchedules } from '@/lib/maintenance-utils';
 import { useToast } from '@/components/ui/use-toast';
 import RoleBasedAccess from '@/components/RoleBasedAccess';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const AdminDashboard: React.FC = () => {
   const { toast } = useToast();
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  // Get tab from URL query params if present, otherwise default to 'overview'
+  const queryParams = new URLSearchParams(location.search);
+  const tabFromUrl = queryParams.get('tab');
+  const [activeTab, setActiveTab] = useState<string>(tabFromUrl || 'overview');
   
   const { data: auditLogs, isLoading: isLoadingAuditLogs, error: auditLogsError } = useQuery({
     queryKey: ['auditLogs'],
@@ -23,6 +30,23 @@ const AdminDashboard: React.FC = () => {
     queryKey: ['maintenanceSchedules'],
     queryFn: getMaintenanceSchedules,
   });
+  
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    
+    // Update URL with the selected tab without page reload
+    const params = new URLSearchParams(location.search);
+    params.set('tab', value);
+    navigate(`/enterprise?${params.toString()}`, { replace: true });
+  };
+  
+  // Sync tab with URL if it changes externally
+  useEffect(() => {
+    const tabInUrl = queryParams.get('tab');
+    if (tabInUrl && tabInUrl !== activeTab) {
+      setActiveTab(tabInUrl);
+    }
+  }, [location.search, queryParams, activeTab]);
   
   return (
     <RoleBasedAccess
@@ -42,7 +66,7 @@ const AdminDashboard: React.FC = () => {
           <h1 className="text-2xl font-bold tracking-tight">Admin Dashboard</h1>
         </div>
         
-        <Tabs defaultValue="overview" className="space-y-4">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="users">User Management</TabsTrigger>
