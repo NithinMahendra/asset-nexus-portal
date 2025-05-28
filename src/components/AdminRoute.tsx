@@ -10,15 +10,13 @@ import { AlertTriangle } from 'lucide-react';
 interface AdminRouteProps {
   children?: React.ReactNode;
   redirectTo?: string;
-  showAlert?: boolean;
 }
 
 const AdminRoute: React.FC<AdminRouteProps> = ({ 
   children, 
-  redirectTo = '/auth/login',
-  showAlert = true
+  redirectTo = '/auth/login' 
 }) => {
-  const { isAdmin, isLoading, userRole, user } = useAuth();
+  const { isAdmin, isLoading, userRole } = useAuth();
   
   useEffect(() => {
     if (!isLoading && !isAdmin && userRole) {
@@ -28,15 +26,8 @@ const AdminRoute: React.FC<AdminRouteProps> = ({
         description: `You're logged in as ${userRole}. Admin privileges required.`,
         variant: "destructive",
       });
-    } else if (!isLoading && !userRole && user) {
-      // If user has no role assigned
-      toast({
-        title: "No Role Assigned",
-        description: "Your account doesn't have any role. Please contact an administrator.",
-        variant: "destructive",
-      });
     }
-  }, [isLoading, isAdmin, userRole, user]);
+  }, [isLoading, isAdmin, userRole]);
 
   if (isLoading) {
     return (
@@ -52,35 +43,10 @@ const AdminRoute: React.FC<AdminRouteProps> = ({
     );
   }
 
-  // If no user, redirect to login
-  if (!user) {
-    console.log("No user logged in, redirecting to", redirectTo);
-    return <Navigate to={redirectTo} replace />;
-  }
-
-  // If user exists but has no role
-  if (user && !userRole) {
-    if (showAlert) {
-      return (
-        <div className="p-6">
-          <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>No Role Assigned</AlertTitle>
-            <AlertDescription>
-              Your account doesn't have a role assigned. Please contact an administrator.
-              <p className="mt-2">User ID: {user.id}</p>
-            </AlertDescription>
-          </Alert>
-        </div>
-      );
-    }
-    return <Navigate to={redirectTo} replace />;
-  }
-
   // Check if user is admin, if not redirect
   if (!isAdmin) {
     console.log("Access denied: User is not an admin, redirecting to", redirectTo);
-    if (showAlert) {
+    if (userRole) {
       return (
         <div className="p-6">
           <Alert variant="destructive">
