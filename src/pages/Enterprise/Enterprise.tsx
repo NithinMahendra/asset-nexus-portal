@@ -2,7 +2,7 @@
 import React from 'react';
 import { useAuth } from '@/providers/AuthProvider';
 import AdminDashboard from './AdminDashboard';
-import UserDashboard from './UserDashboard';
+import EmployeeDashboard from './EmployeeDashboard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
@@ -28,7 +28,7 @@ const Enterprise: React.FC = () => {
   if (userRole === 'admin') {
     return <AdminDashboard />;
   } else if (userRole === 'employee') {
-    return <UserDashboard />;
+    return <EmployeeDashboard />;
   } else {
     return (
       <Alert variant="destructive">

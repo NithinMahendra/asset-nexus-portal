@@ -312,7 +312,11 @@ const RoleBasedLogin = () => {
                           <Input 
                             placeholder="Enter your full name" 
                             className="pl-10" 
-                            {...field} 
+                            value={field.value}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                            name={field.name}
+                            autoComplete="name"
                           />
                         </div>
                       </FormControl>
@@ -333,6 +337,7 @@ const RoleBasedLogin = () => {
                             placeholder="Enter your email" 
                             className="pl-10" 
                             {...field} 
+                            autoComplete="email"
                           />
                         </div>
                       </FormControl>
@@ -354,6 +359,7 @@ const RoleBasedLogin = () => {
                             placeholder="Create a password" 
                             className="pl-10 pr-10" 
                             {...field} 
+                            autoComplete="new-password"
                           />
                           <Button
                             type="button"
@@ -388,6 +394,7 @@ const RoleBasedLogin = () => {
                             placeholder="Confirm your password" 
                             className="pl-10 pr-10" 
                             {...field} 
+                            autoComplete="new-password"
                           />
                           <Button
                             type="button"
@@ -433,6 +440,7 @@ const RoleBasedLogin = () => {
                             placeholder="Enter your email" 
                             className="pl-10" 
                             {...field} 
+                            autoComplete="email"
                           />
                         </div>
                       </FormControl>
@@ -454,6 +462,7 @@ const RoleBasedLogin = () => {
                             placeholder="Enter your password" 
                             className="pl-10 pr-10" 
                             {...field} 
+                            autoComplete="current-password"
                           />
                           <Button
                             type="button"
