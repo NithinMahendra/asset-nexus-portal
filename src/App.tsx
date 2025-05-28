@@ -12,7 +12,7 @@ import Notifications from "@/pages/Notifications";
 import Reports from "@/pages/Reports";
 import Settings from "@/pages/Settings";
 import NotFound from "@/pages/NotFound";
-import LoginPage from "@/pages/Auth/Login";
+import RoleBasedLogin from "@/pages/Auth/RoleBasedLogin";
 import SignupPage from "@/pages/Auth/Signup";
 import AuthCallback from "@/pages/Auth/AuthCallback";
 import Logout from "@/pages/Auth/Logout";
@@ -34,7 +34,7 @@ const App = () => (
           <AuthProvider>
             <Routes>
               {/* Auth Routes */}
-              <Route path="/auth/login" element={<LoginPage />} />
+              <Route path="/auth/login" element={<RoleBasedLogin />} />
               <Route path="/auth/signup" element={<SignupPage />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/logout" element={<Logout />} />
