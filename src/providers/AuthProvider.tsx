@@ -1,7 +1,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
-import { checkAdminRole, getUserRole, setupAutoLogout } from "@/lib/auth-utils";
+import { checkAdminRole, getUserRole } from "@/lib/auth-utils";
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AuthChangeEvent, Session, User } from '@supabase/supabase-js';
 import { UserRole } from "@/types";
@@ -13,7 +13,6 @@ interface AuthContextType {
   isAdmin: boolean;
   userRole: UserRole | null;
   isLoading: boolean;
-  refreshUserRole: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -21,8 +20,7 @@ const AuthContext = createContext<AuthContextType>({
   session: null,
   isAdmin: false,
   userRole: null,
-  isLoading: true,
-  refreshUserRole: async () => {}
+  isLoading: true
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -36,25 +34,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Function to refresh user role (useful after role changes)
-  const refreshUserRole = async () => {
-    if (user) {
-      const role = await getUserRole(user.id);
-      setUserRole(role);
-      setIsAdmin(role === 'admin');
-    }
-  };
-
   useEffect(() => {
-    console.log("Auth Provider initialized with current path:", location.pathname);
-    
     const checkAuth = async () => {
       try {
         setIsLoading(true);
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session?.user) {
-          console.log("Session found for user:", session.user.email);
           setUser(session.user);
           setSession(session);
           
@@ -64,20 +50,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           
           const [role, adminStatus] = await Promise.all([rolePromise, adminStatusPromise]);
           
-          console.log("User role from database:", role);
-          console.log("User is admin:", adminStatus);
-          
           setUserRole(role);
           setIsAdmin(adminStatus);
           
           // Only redirect if not on auth pages and not authenticated with appropriate role
           const isAuthPage = location.pathname.startsWith('/auth');
           if (!isAuthPage && !role) {
-            console.log("No role assigned, redirecting to login");
             navigate('/auth/login');
           }
         } else {
-          console.log("No session found, clearing auth state");
           setUser(null);
           setSession(null);
           setIsAdmin(false);
@@ -86,7 +67,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           // Only redirect if not on auth pages
           const isAuthPage = location.pathname.startsWith('/auth');
           if (!isAuthPage) {
-            console.log("Not on auth page, redirecting to login");
             navigate('/auth/login');
           }
         }
@@ -114,42 +94,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     const handleAuthChange = async (event: AuthChangeEvent, session: Session | null) => {
-      console.log("Auth state change:", event);
       if (session?.user) {
         setUser(session.user);
         setSession(session);
         
-        // Get user role - to prevent potential deadlocks, we use setTimeout
-        setTimeout(async () => {
-          const role = await getUserRole(session.user.id);
-          console.log("User role after auth change:", role);
-          setUserRole(role);
-          
-          // Check if user is an admin
-          const adminStatus = await checkAdminRole(session.user.id);
-          console.log("Admin status after auth change:", adminStatus);
-          setIsAdmin(adminStatus);
-          
-          // Don't redirect on signup
-          if (event === 'SIGNED_UP' as AuthChangeEvent) {
-            return;
-          }
-          
-          // Redirect based on role if not on auth pages
-          const isAuthPage = location.pathname.startsWith('/auth');
-          if (!isAuthPage) {
-            if (role === 'admin') {
-              console.log("Admin user detected, redirecting to enterprise dashboard");
-              navigate('/enterprise');
-            } else if (role === 'employee') {
-              console.log("Employee user detected, redirecting to main dashboard");
-              navigate('/');
-            } else {
-              console.log("No role assigned, redirecting to login");
-              navigate('/auth/login');
-            }
-          }
-        }, 0);
+        // Get user role
+        const role = await getUserRole(session.user.id);
+        setUserRole(role);
+        
+        // Check if user is an admin
+        const adminStatus = await checkAdminRole(session.user.id);
+        setIsAdmin(adminStatus);
+        
+        // Don't redirect on signup
+        if (event === 'SIGNED_UP' as AuthChangeEvent) {
+          return;
+        }
+        
+        // Only redirect if not on auth pages and not authenticated with appropriate role
+        const isAuthPage = location.pathname.startsWith('/auth');
+        if (!isAuthPage && !role) {
+          navigate('/auth/login');
+        }
       } else {
         setUser(null);
         setSession(null);
@@ -172,26 +138,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     );
 
-    // Set up auto logout after inactivity (15 minutes)
-    const cleanupAutoLogout = setupAutoLogout(15 * 60 * 1000);
-
     checkAuth();
-    
-    return () => {
-      subscription.unsubscribe();
-      cleanupAutoLogout();
-    };
+    return () => subscription.unsubscribe();
   }, [navigate, location.pathname]);
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      session, 
-      isAdmin, 
-      userRole, 
-      isLoading,
-      refreshUserRole
-    }}>
+    <AuthContext.Provider value={{ user, session, isAdmin, userRole, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

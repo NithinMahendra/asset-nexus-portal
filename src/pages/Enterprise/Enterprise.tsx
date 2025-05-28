@@ -1,25 +1,12 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useAuth } from '@/providers/AuthProvider';
 import AdminDashboard from './AdminDashboard';
 import UserDashboard from './UserDashboard';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Navigate } from 'react-router-dom';
-import { toast } from '@/components/ui/use-toast';
-import RoleBasedAccess from '@/components/RoleBasedAccess';
 
 const Enterprise: React.FC = () => {
-  const { userRole, isLoading, user } = useAuth();
-  
-  useEffect(() => {
-    if (!isLoading && userRole) {
-      toast({
-        title: `Welcome to Enterprise Portal`,
-        description: `You're logged in as ${userRole}`,
-        duration: 3000,
-      });
-    }
-  }, [isLoading, userRole]);
+  const { userRole, isLoading } = useAuth();
   
   if (isLoading) {
     return (
@@ -35,21 +22,8 @@ const Enterprise: React.FC = () => {
     );
   }
   
-  // If no user role is assigned, redirect to login
-  if (!userRole) {
-    console.log("No user role assigned, redirecting to login");
-    return <Navigate to="/auth/login" replace />;
-  }
-  
-  console.log("Enterprise: rendering dashboard for role:", userRole);
-  
   // Render the appropriate dashboard based on user role
-  return (
-    <>
-      {userRole === 'admin' && <AdminDashboard />}
-      {userRole === 'employee' && <UserDashboard />}
-    </>
-  );
+  return userRole === 'admin' ? <AdminDashboard /> : <UserDashboard />;
 };
 
 export default Enterprise;
