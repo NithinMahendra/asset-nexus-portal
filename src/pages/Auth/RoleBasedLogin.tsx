@@ -89,7 +89,7 @@ const RoleBasedLogin = () => {
             title: "Login successful",
             description: `Welcome back, ${userRole}!`,
           });
-          navigate("/");
+          navigate("/enterprise");
         } else {
           toast({
             title: "Access denied",
@@ -312,10 +312,7 @@ const RoleBasedLogin = () => {
                           <Input 
                             placeholder="Enter your full name" 
                             className="pl-10" 
-                            value={field.value}
-                            onChange={field.onChange}
-                            onBlur={field.onBlur}
-                            name={field.name}
+                            {...field}
                             autoComplete="name"
                           />
                         </div>
