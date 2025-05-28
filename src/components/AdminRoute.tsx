@@ -4,8 +4,6 @@ import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/providers/AuthProvider';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/use-toast';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle } from 'lucide-react';
 
 interface AdminRouteProps {
   children?: React.ReactNode;
@@ -23,7 +21,7 @@ const AdminRoute: React.FC<AdminRouteProps> = ({
       // If user is logged in but not admin
       toast({
         title: "Access Denied",
-        description: `You're logged in as ${userRole}. Admin privileges required.`,
+        description: "You don't have permission to access this area.",
         variant: "destructive",
       });
     }
@@ -46,19 +44,6 @@ const AdminRoute: React.FC<AdminRouteProps> = ({
   // Check if user is admin, if not redirect
   if (!isAdmin) {
     console.log("Access denied: User is not an admin, redirecting to", redirectTo);
-    if (userRole) {
-      return (
-        <div className="p-6">
-          <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Admin Access Required</AlertTitle>
-            <AlertDescription>
-              You are logged in as {userRole}, but this page requires admin privileges.
-            </AlertDescription>
-          </Alert>
-        </div>
-      );
-    }
     return <Navigate to={redirectTo} replace />;
   }
 

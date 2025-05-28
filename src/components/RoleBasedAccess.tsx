@@ -50,10 +50,6 @@ const RoleBasedAccess: React.FC<RoleBasedAccessProps> = ({
           <AlertTitle>Access Denied</AlertTitle>
           <AlertDescription>
             You don't have permission to access this feature.
-            {userRole && <p className="mt-1">Your current role: {userRole}</p>}
-            {allowedRoles.length > 0 && (
-              <p className="mt-1">Required role(s): {allowedRoles.join(', ')}</p>
-            )}
           </AlertDescription>
         </Alert>
       );

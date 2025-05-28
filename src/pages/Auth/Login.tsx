@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -82,18 +83,17 @@ const LoginPage = () => {
           throw new Error("Access denied. No role assigned.");
         }
       }
+    } catch (error: any) {
+      console.error("Login error:", error);
+      toast({
+        title: "Login failed",
+        description: error.message || "An error occurred during login",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
-  } catch (error: any) {
-    console.error("Login error:", error);
-    toast({
-      title: "Login failed",
-      description: error.message || "An error occurred during login",
-      variant: "destructive",
-    });
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">

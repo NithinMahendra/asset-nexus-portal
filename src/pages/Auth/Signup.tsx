@@ -5,23 +5,19 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/integrations/supabase/client";
-import { Eye, EyeOff, Lock, Mail, User, Briefcase } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { UserRole } from "@/types";
-import { assignRoleToUser } from "@/lib/auth-utils";
 
 const signupSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
   email: z.string().email({ message: "Please enter a valid email address" }),
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
   confirmPassword: z.string(),
-  role: z.enum(['admin', 'employee']).default('employee'),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
@@ -43,7 +39,6 @@ const SignupPage = () => {
       email: "",
       password: "",
       confirmPassword: "",
-      role: "employee",
     },
   });
 
@@ -85,22 +80,23 @@ const SignupPage = () => {
       }
 
       if (authData?.user) {
-        // Add user to the user_roles table with the selected role
-        const roleAssigned = await assignRoleToUser(authData.user.id, data.role);
+        // Add user to the user_roles table with 'employee' role
+        // Changed from 'viewer' to 'employee' to match the database schema
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .insert({
+            user_id: authData.user.id,
+            role: 'employee'
+          });
 
-        if (!roleAssigned) {
-          console.error("Error setting user role");
-          toast({
-            title: "Role assignment error",
-            description: "There was an issue assigning your role. Contact an administrator.",
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Account created successfully",
-            description: `You can now login with your credentials. Role: ${data.role}`,
-          });
+        if (roleError) {
+          console.error("Error setting user role:", roleError);
         }
+
+        toast({
+          title: "Account created successfully",
+          description: "You can now login with your credentials.",
+        });
         
         setRegistrationSuccess(true);
         
@@ -279,33 +275,6 @@ const SignupPage = () => {
                           </Button>
                         </div>
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="role"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Role</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <div className="relative">
-                            <Briefcase className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                            <SelectTrigger className="pl-10">
-                              <SelectValue placeholder="Select your role" />
-                            </SelectTrigger>
-                          </div>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="employee">Employee</SelectItem>
-                          <SelectItem value="admin">Admin</SelectItem>
-                        </SelectContent>
-                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}

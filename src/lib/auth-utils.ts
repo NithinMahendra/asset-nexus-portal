@@ -57,9 +57,6 @@ export const hasRolePermission = (userRole: UserRole | null, requiredRole: UserR
     'employee': 1
   };
   
-  // Add more detailed logging
-  console.log(`Checking permission - User role: ${userRole} (level ${roleHierarchy[userRole]}) vs Required: ${requiredRole} (level ${roleHierarchy[requiredRole]})`);
-  
   return roleHierarchy[userRole] >= roleHierarchy[requiredRole];
 };
 
