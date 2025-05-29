@@ -34,42 +34,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const fetchUserRoleAndRedirect = async (userId: string, isNewSignup = false) => {
-    try {
-      // For new signups, wait a bit longer for the database trigger to complete
-      const waitTime = isNewSignup ? 2000 : 500;
-      await new Promise(resolve => setTimeout(resolve, waitTime));
-      
-      const [role, adminStatus] = await Promise.all([
-        getUserRole(userId),
-        checkAdminRole(userId)
-      ]);
-      
-      console.log('Fetched role:', role, 'isAdmin:', adminStatus);
-      
-      setUserRole(role);
-      setIsAdmin(adminStatus);
-      
-      // Role-based navigation
-      const isAuthPage = location.pathname.startsWith('/auth');
-      if (role) {
-        if (role === 'admin' && (!isAuthPage || !location.pathname.includes('admin-dashboard'))) {
-          navigate('/admin-dashboard');
-        } else if (role === 'employee' && (!isAuthPage || !location.pathname.includes('employee-dashboard'))) {
-          navigate('/employee-dashboard');
-        }
-      } else if (!isAuthPage) {
-        // If no role found and not on auth page, redirect to login
-        navigate('/auth/login');
-      }
-    } catch (error) {
-      console.error('Error fetching user role:', error);
-      if (!location.pathname.startsWith('/auth')) {
-        navigate('/auth/login');
-      }
-    }
-  };
-
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -79,13 +43,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (session?.user) {
           setUser(session.user);
           setSession(session);
-          await fetchUserRoleAndRedirect(session.user.id);
+          
+          // Get user role in parallel
+          const rolePromise = getUserRole(session.user.id);
+          const adminStatusPromise = checkAdminRole(session.user.id);
+          
+          const [role, adminStatus] = await Promise.all([rolePromise, adminStatusPromise]);
+          
+          setUserRole(role);
+          setIsAdmin(adminStatus);
+          
+          // Only redirect if not on auth pages and not authenticated with appropriate role
+          const isAuthPage = location.pathname.startsWith('/auth');
+          if (!isAuthPage && !role) {
+            navigate('/auth/login');
+          }
         } else {
           setUser(null);
           setSession(null);
           setIsAdmin(false);
           setUserRole(null);
           
+          // Only redirect if not on auth pages
           const isAuthPage = location.pathname.startsWith('/auth');
           if (!isAuthPage) {
             navigate('/auth/login');
@@ -104,6 +83,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setIsAdmin(false);
         setUserRole(null);
         
+        // Only redirect if not on auth pages
         const isAuthPage = location.pathname.startsWith('/auth');
         if (!isAuthPage) {
           navigate('/auth/login');
@@ -114,14 +94,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     const handleAuthChange = async (event: AuthChangeEvent, session: Session | null) => {
-      console.log('Auth change event:', event, session?.user?.id);
-      
       if (session?.user) {
         setUser(session.user);
         setSession(session);
         
-        if (event === 'SIGNED_IN') {
-          await fetchUserRoleAndRedirect(session.user.id, true);
+        // Get user role
+        const role = await getUserRole(session.user.id);
+        setUserRole(role);
+        
+        // Check if user is an admin
+        const adminStatus = await checkAdminRole(session.user.id);
+        setIsAdmin(adminStatus);
+        
+        // Don't redirect on signup
+        if (event === 'SIGNED_UP' as AuthChangeEvent) {
+          return;
+        }
+        
+        // Only redirect if not on auth pages and not authenticated with appropriate role
+        const isAuthPage = location.pathname.startsWith('/auth');
+        if (!isAuthPage && !role) {
+          navigate('/auth/login');
         }
       } else {
         setUser(null);
@@ -129,6 +122,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setIsAdmin(false);
         setUserRole(null);
         
+        // Only redirect if not on auth pages
         const isAuthPage = location.pathname.startsWith('/auth');
         if (!isAuthPage) {
           navigate('/auth/login');
@@ -136,8 +130,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     };
 
+    // Set up the subscription
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        // Use setTimeout to prevent potential deadlocks
         setTimeout(() => handleAuthChange(event, session), 0);
       }
     );
