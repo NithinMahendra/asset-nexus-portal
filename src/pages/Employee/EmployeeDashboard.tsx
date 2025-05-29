@@ -1,10 +1,13 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/providers/AuthProvider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Package, Wrench, User, LogOut, Users, CreditCard } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Package, Wrench, User, LogOut, Users, CreditCard, Plus, Search, Edit } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
@@ -12,6 +15,19 @@ import { toast } from '@/components/ui/use-toast';
 const EmployeeDashboard: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('assets');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [maintenanceForm, setMaintenanceForm] = useState({
+    assetId: '',
+    description: '',
+    priority: 'medium'
+  });
+  const [profileForm, setProfileForm] = useState({
+    fullName: user?.user_metadata?.full_name || '',
+    email: user?.email || '',
+    phone: '',
+    department: ''
+  });
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -22,35 +38,72 @@ const EmployeeDashboard: React.FC = () => {
     navigate('/auth/login');
   };
 
-  const employeeFeatures = [
-    {
-      title: "My Assets",
-      description: "View and manage your assigned assets",
-      icon: <Package className="h-12 w-12" />,
-      color: "from-blue-500 to-blue-600",
-      bgColor: "from-blue-50 to-blue-100",
-      borderColor: "border-blue-200",
-      textColor: "text-blue-600"
-    },
-    {
-      title: "Maintenance Requests",
-      description: "Submit and track maintenance requests",
-      icon: <Wrench className="h-12 w-12" />,
-      color: "from-green-500 to-green-600",
-      bgColor: "from-green-50 to-green-100",
-      borderColor: "border-green-200",
-      textColor: "text-green-600"
-    },
-    {
-      title: "My Profile",
-      description: "Update your profile information",
-      icon: <User className="h-12 w-12" />,
-      color: "from-purple-500 to-purple-600",
-      bgColor: "from-purple-50 to-purple-100",
-      borderColor: "border-purple-200",
-      textColor: "text-purple-600"
-    }
+  // Mock data for employee's assigned assets
+  const assignedAssets = [
+    { id: 'LP-001', name: 'MacBook Pro 14"', type: 'Laptop', status: 'Active', assignedDate: '2024-01-15' },
+    { id: 'DK-045', name: 'Standing Desk', type: 'Furniture', status: 'Active', assignedDate: '2024-01-20' },
+    { id: 'MN-102', name: 'Dell Monitor 27"', type: 'Monitor', status: 'Active', assignedDate: '2024-01-15' },
+    { id: 'KB-203', name: 'Mechanical Keyboard', type: 'Accessory', status: 'Active', assignedDate: '2024-01-22' },
+    { id: 'MS-304', name: 'Wireless Mouse', type: 'Accessory', status: 'Active', assignedDate: '2024-01-22' }
   ];
+
+  // Mock data for maintenance requests
+  const [maintenanceRequests, setMaintenanceRequests] = useState([
+    { id: 1, assetId: 'LP-001', description: 'Screen flickering issue', status: 'Pending', date: '2024-01-25' },
+    { id: 2, assetId: 'DK-045', description: 'Height adjustment not working', status: 'In Progress', date: '2024-01-20' },
+    { id: 3, assetId: 'MN-102', description: 'Dead pixels on screen', status: 'Completed', date: '2024-01-18' }
+  ]);
+
+  const filteredAssets = assignedAssets.filter(asset => 
+    asset.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    asset.id.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleMaintenanceSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!maintenanceForm.assetId || !maintenanceForm.description) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newRequest = {
+      id: maintenanceRequests.length + 1,
+      assetId: maintenanceForm.assetId,
+      description: maintenanceForm.description,
+      status: 'Pending',
+      date: new Date().toISOString().split('T')[0]
+    };
+
+    setMaintenanceRequests([newRequest, ...maintenanceRequests]);
+    setMaintenanceForm({ assetId: '', description: '', priority: 'medium' });
+    
+    toast({
+      title: "Request Submitted",
+      description: "Your maintenance request has been submitted successfully.",
+    });
+  };
+
+  const handleProfileUpdate = (e: React.FormEvent) => {
+    e.preventDefault();
+    toast({
+      title: "Profile Updated",
+      description: "Your profile information has been updated successfully.",
+    });
+  };
+
+  const getStatusBadge = (status: string) => {
+    const statusColors = {
+      'Active': 'bg-green-100 text-green-800',
+      'Pending': 'bg-yellow-100 text-yellow-800',
+      'In Progress': 'bg-blue-100 text-blue-800',
+      'Completed': 'bg-gray-100 text-gray-800'
+    };
+    return statusColors[status as keyof typeof statusColors] || 'bg-gray-100 text-gray-800';
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -64,7 +117,7 @@ const EmployeeDashboard: React.FC = () => {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">AssetNexus Employee</h1>
-                <p className="text-gray-600">Employee Portal</p>
+                <p className="text-gray-600">Welcome, {user?.user_metadata?.full_name || user?.email?.split('@')[0]}</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -89,89 +142,222 @@ const EmployeeDashboard: React.FC = () => {
 
       {/* Main Content */}
       <div className="max-w-6xl mx-auto px-6 py-8">
-        {/* Welcome Section */}
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">
-            Welcome, {user?.user_metadata?.full_name || user?.email?.split('@')[0]}!
-          </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Access your assigned assets, submit maintenance requests, and manage your profile from this portal.
-          </p>
-        </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="assets" className="flex items-center space-x-2">
+              <Package className="h-4 w-4" />
+              <span>My Assets</span>
+            </TabsTrigger>
+            <TabsTrigger value="maintenance" className="flex items-center space-x-2">
+              <Wrench className="h-4 w-4" />
+              <span>Maintenance</span>
+            </TabsTrigger>
+            <TabsTrigger value="profile" className="flex items-center space-x-2">
+              <User className="h-4 w-4" />
+              <span>Profile</span>
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Feature Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-          {employeeFeatures.map((feature, index) => (
-            <Card 
-              key={index} 
-              className={`hover:shadow-xl transition-all duration-300 cursor-pointer bg-gradient-to-br ${feature.bgColor} ${feature.borderColor} border-2 hover:scale-105`}
-            >
-              <CardContent className="p-8 text-center">
-                <div className={`w-20 h-20 bg-gradient-to-br ${feature.color} rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg text-white`}>
-                  {feature.icon}
-                </div>
-                <CardTitle className="text-xl font-bold mb-3 text-gray-900">
-                  {feature.title}
+          {/* Assets Tab */}
+          <TabsContent value="assets" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Package className="h-5 w-5" />
+                  <span>My Assigned Assets</span>
                 </CardTitle>
-                <CardDescription className={`${feature.textColor} text-lg`}>
-                  {feature.description}
+                <CardDescription>
+                  View and manage your assigned assets
                 </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="mb-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input 
+                      placeholder="Search assets..." 
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid gap-4">
+                  {filteredAssets.map((asset) => (
+                    <div key={asset.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="font-semibold text-lg">{asset.name}</h3>
+                          <p className="text-gray-600">Asset ID: {asset.id}</p>
+                          <p className="text-sm text-gray-500">Type: {asset.type} • Assigned: {asset.assignedDate}</p>
+                        </div>
+                        <Badge className={getStatusBadge(asset.status)}>
+                          {asset.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
-          ))}
-        </div>
+          </TabsContent>
 
-        {/* Quick Stats */}
-        <div className="bg-white rounded-xl shadow-lg p-8">
-          <h3 className="text-2xl font-bold text-gray-900 mb-6 text-center">Quick Overview</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
-              <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Package className="h-8 w-8 text-white" />
-              </div>
-              <p className="text-3xl font-bold text-blue-800">8</p>
-              <p className="text-blue-600 font-medium">Assigned Assets</p>
-            </div>
-            
-            <div className="text-center p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-lg border border-green-200">
-              <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Wrench className="h-8 w-8 text-white" />
-              </div>
-              <p className="text-3xl font-bold text-green-800">3</p>
-              <p className="text-green-600 font-medium">Pending Requests</p>
-            </div>
-            
-            <div className="text-center p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border border-purple-200">
-              <div className="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <User className="h-8 w-8 text-white" />
-              </div>
-              <p className="text-3xl font-bold text-purple-800">95%</p>
-              <p className="text-purple-600 font-medium">Profile Complete</p>
-            </div>
-          </div>
-        </div>
+          {/* Maintenance Tab */}
+          <TabsContent value="maintenance" className="space-y-6">
+            <div className="grid gap-6">
+              {/* Submit New Request */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Plus className="h-5 w-5" />
+                    <span>Submit Maintenance Request</span>
+                  </CardTitle>
+                  <CardDescription>
+                    Report issues with your assigned assets
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleMaintenanceSubmit} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Asset</label>
+                      <select 
+                        value={maintenanceForm.assetId}
+                        onChange={(e) => setMaintenanceForm({...maintenanceForm, assetId: e.target.value})}
+                        className="w-full p-2 border rounded-md"
+                        required
+                      >
+                        <option value="">Select an asset</option>
+                        {assignedAssets.map(asset => (
+                          <option key={asset.id} value={asset.id}>
+                            {asset.name} ({asset.id})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Description</label>
+                      <Textarea 
+                        placeholder="Describe the issue..."
+                        value={maintenanceForm.description}
+                        onChange={(e) => setMaintenanceForm({...maintenanceForm, description: e.target.value})}
+                        required
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Priority</label>
+                      <select 
+                        value={maintenanceForm.priority}
+                        onChange={(e) => setMaintenanceForm({...maintenanceForm, priority: e.target.value})}
+                        className="w-full p-2 border rounded-md"
+                      >
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                        <option value="urgent">Urgent</option>
+                      </select>
+                    </div>
+                    
+                    <Button type="submit" className="w-full">
+                      Submit Request
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
 
-        {/* Recent Activity */}
-        <div className="mt-8 bg-white rounded-xl shadow-lg p-8">
-          <h3 className="text-2xl font-bold text-gray-900 mb-6">Recent Activity</h3>
-          <div className="space-y-4">
-            <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <p className="text-gray-700">Laptop LP-001 assigned to you</p>
-              <span className="text-sm text-gray-500 ml-auto">2 hours ago</span>
+              {/* Request History */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Wrench className="h-5 w-5" />
+                    <span>My Maintenance Requests</span>
+                  </CardTitle>
+                  <CardDescription>
+                    Track your submitted maintenance requests
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {maintenanceRequests.map((request) => (
+                      <div key={request.id} className="border rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="font-semibold">Asset: {request.assetId}</h3>
+                          <Badge className={getStatusBadge(request.status)}>
+                            {request.status}
+                          </Badge>
+                        </div>
+                        <p className="text-gray-700 mb-2">{request.description}</p>
+                        <p className="text-sm text-gray-500">Submitted: {request.date}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-            <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <p className="text-gray-700">Maintenance request for DK-045 completed</p>
-              <span className="text-sm text-gray-500 ml-auto">1 day ago</span>
-            </div>
-            <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
-              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-              <p className="text-gray-700">Profile updated successfully</p>
-              <span className="text-sm text-gray-500 ml-auto">3 days ago</span>
-            </div>
-          </div>
-        </div>
+          </TabsContent>
+
+          {/* Profile Tab */}
+          <TabsContent value="profile" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <User className="h-5 w-5" />
+                  <span>Profile Information</span>
+                </CardTitle>
+                <CardDescription>
+                  Update your personal information
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleProfileUpdate} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Full Name</label>
+                    <Input 
+                      value={profileForm.fullName}
+                      onChange={(e) => setProfileForm({...profileForm, fullName: e.target.value})}
+                      placeholder="Enter your full name"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Email</label>
+                    <Input 
+                      value={profileForm.email}
+                      disabled
+                      className="bg-gray-50"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Phone Number</label>
+                    <Input 
+                      value={profileForm.phone}
+                      onChange={(e) => setProfileForm({...profileForm, phone: e.target.value})}
+                      placeholder="Enter your phone number"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Department</label>
+                    <Input 
+                      value={profileForm.department}
+                      onChange={(e) => setProfileForm({...profileForm, department: e.target.value})}
+                      placeholder="Enter your department"
+                    />
+                  </div>
+                  
+                  <Button type="submit" className="w-full">
+                    <Edit className="h-4 w-4 mr-2" />
+                    Update Profile
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

@@ -44,25 +44,47 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setUser(session.user);
           setSession(session);
           
-          const rolePromise = getUserRole(session.user.id);
-          const adminStatusPromise = checkAdminRole(session.user.id);
-          
-          const [role, adminStatus] = await Promise.all([rolePromise, adminStatusPromise]);
-          
-          setUserRole(role);
-          setIsAdmin(adminStatus);
-          
-          // Role-based redirects
-          const isAuthPage = location.pathname.startsWith('/auth');
-          if (!isAuthPage && role) {
-            if (role === 'admin' && !location.pathname.includes('admin-dashboard')) {
-              navigate('/admin-dashboard');
-            } else if (role === 'employee' && !location.pathname.includes('employee-dashboard')) {
-              navigate('/employee-dashboard');
+          // Give time for the user_roles table to be populated if this is a new signup
+          setTimeout(async () => {
+            try {
+              const rolePromise = getUserRole(session.user.id);
+              const adminStatusPromise = checkAdminRole(session.user.id);
+              
+              const [role, adminStatus] = await Promise.all([rolePromise, adminStatusPromise]);
+              
+              setUserRole(role);
+              setIsAdmin(adminStatus);
+              
+              // Role-based redirects
+              const isAuthPage = location.pathname.startsWith('/auth');
+              if (!isAuthPage && role) {
+                if (role === 'admin' && !location.pathname.includes('admin-dashboard')) {
+                  navigate('/admin-dashboard');
+                } else if (role === 'employee' && !location.pathname.includes('employee-dashboard')) {
+                  navigate('/employee-dashboard');
+                }
+              } else if (!isAuthPage && !role) {
+                // If no role is found, wait a bit and try again (for new signups)
+                setTimeout(async () => {
+                  const retryRole = await getUserRole(session.user.id);
+                  if (retryRole) {
+                    setUserRole(retryRole);
+                    setIsAdmin(retryRole === 'admin');
+                    if (retryRole === 'admin') {
+                      navigate('/admin-dashboard');
+                    } else if (retryRole === 'employee') {
+                      navigate('/employee-dashboard');
+                    }
+                  } else {
+                    navigate('/auth/login');
+                  }
+                }, 2000);
+              }
+            } catch (error) {
+              console.error('Error fetching user role:', error);
+              navigate('/auth/login');
             }
-          } else if (!isAuthPage && !role) {
-            navigate('/auth/login');
-          }
+          }, 1000);
         } else {
           setUser(null);
           setSession(null);
@@ -97,30 +119,68 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     const handleAuthChange = async (event: AuthChangeEvent, session: Session | null) => {
+      console.log('Auth change event:', event, session?.user?.id);
+      
       if (session?.user) {
         setUser(session.user);
         setSession(session);
         
-        const role = await getUserRole(session.user.id);
-        setUserRole(role);
-        
-        const adminStatus = await checkAdminRole(session.user.id);
-        setIsAdmin(adminStatus);
-        
-        if (event === 'SIGNED_UP' as AuthChangeEvent) {
-          return;
+        if (event === 'SIGNED_IN') {
+          // Give a moment for the database to update
+          setTimeout(async () => {
+            try {
+              const role = await getUserRole(session.user.id);
+              console.log('User role after login:', role);
+              
+              setUserRole(role);
+              
+              const adminStatus = await checkAdminRole(session.user.id);
+              setIsAdmin(adminStatus);
+              
+              // Role-based navigation after auth change
+              const isAuthPage = location.pathname.startsWith('/auth');
+              if (!isAuthPage && role) {
+                if (role === 'admin') {
+                  navigate('/admin-dashboard');
+                } else if (role === 'employee') {
+                  navigate('/employee-dashboard');
+                }
+              } else if (role) {
+                if (role === 'admin') {
+                  navigate('/admin-dashboard');
+                } else if (role === 'employee') {
+                  navigate('/employee-dashboard');
+                }
+              } else {
+                // If still no role found, try one more time
+                setTimeout(async () => {
+                  const retryRole = await getUserRole(session.user.id);
+                  if (retryRole) {
+                    setUserRole(retryRole);
+                    setIsAdmin(retryRole === 'admin');
+                    if (retryRole === 'admin') {
+                      navigate('/admin-dashboard');
+                    } else if (retryRole === 'employee') {
+                      navigate('/employee-dashboard');
+                    }
+                  } else {
+                    console.error('No role found for user after multiple attempts');
+                    toast({
+                      title: "Role Assignment Error",
+                      description: "Unable to determine user role. Please contact administrator.",
+                      variant: "destructive",
+                    });
+                  }
+                }, 2000);
+              }
+            } catch (error) {
+              console.error('Error in auth change handler:', error);
+            }
+          }, 500);
         }
         
-        // Role-based navigation after auth change
-        const isAuthPage = location.pathname.startsWith('/auth');
-        if (!isAuthPage && role) {
-          if (role === 'admin') {
-            navigate('/admin-dashboard');
-          } else if (role === 'employee') {
-            navigate('/employee-dashboard');
-          }
-        } else if (!isAuthPage && !role) {
-          navigate('/auth/login');
+        if (event === 'SIGNED_UP') {
+          return;
         }
       } else {
         setUser(null);
