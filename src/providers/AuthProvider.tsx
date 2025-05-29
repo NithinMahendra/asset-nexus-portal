@@ -178,10 +178,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             }
           }, 500);
         }
-        
-        if (event === 'SIGNED_UP') {
-          return;
-        }
       } else {
         setUser(null);
         setSession(null);
