@@ -43,7 +43,8 @@ const AdminSignup = () => {
   const onSubmit = async (data: SignupFormValues) => {
     setIsLoading(true);
     try {
-      const { data: authData, error } = await supabase.auth.signUp({
+      // First, sign up the user
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
@@ -53,11 +54,16 @@ const AdminSignup = () => {
         },
       });
 
-      if (error) {
-        throw error;
+      if (signUpError) {
+        throw signUpError;
       }
 
       if (authData.user) {
+        console.log("User created:", authData.user.id);
+        
+        // Wait a moment to ensure the user is created
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
         // Set admin role for the new user
         const { error: roleError } = await supabase
           .from('user_roles')
@@ -68,15 +74,28 @@ const AdminSignup = () => {
 
         if (roleError) {
           console.error('Error setting admin role:', roleError);
+          // Don't throw here, just log the error
+        } else {
+          console.log('Admin role set successfully');
         }
 
-        toast({
-          title: "Admin account created",
-          description: "You can now login with your credentials.",
-        });
-        navigate("/auth/admin-login");
+        // If email confirmation is disabled, the user should be automatically signed in
+        if (authData.session) {
+          toast({
+            title: "Admin account created",
+            description: "Welcome! You are now logged in as an administrator.",
+          });
+          // The AuthProvider will handle the redirect to admin dashboard
+        } else {
+          toast({
+            title: "Admin account created",
+            description: "Please check your email to confirm your account, then login.",
+          });
+          navigate("/auth/admin-login");
+        }
       }
     } catch (error: any) {
+      console.error('Admin signup error:', error);
       toast({
         title: "Signup failed",
         description: error.message || "An error occurred during signup",

@@ -34,6 +34,42 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const fetchUserRoleAndRedirect = async (userId: string, isNewSignup = false) => {
+    try {
+      // For new signups, wait a bit longer for the database trigger to complete
+      const waitTime = isNewSignup ? 2000 : 500;
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+      
+      const [role, adminStatus] = await Promise.all([
+        getUserRole(userId),
+        checkAdminRole(userId)
+      ]);
+      
+      console.log('Fetched role:', role, 'isAdmin:', adminStatus);
+      
+      setUserRole(role);
+      setIsAdmin(adminStatus);
+      
+      // Role-based navigation
+      const isAuthPage = location.pathname.startsWith('/auth');
+      if (role) {
+        if (role === 'admin' && (!isAuthPage || !location.pathname.includes('admin-dashboard'))) {
+          navigate('/admin-dashboard');
+        } else if (role === 'employee' && (!isAuthPage || !location.pathname.includes('employee-dashboard'))) {
+          navigate('/employee-dashboard');
+        }
+      } else if (!isAuthPage) {
+        // If no role found and not on auth page, redirect to login
+        navigate('/auth/login');
+      }
+    } catch (error) {
+      console.error('Error fetching user role:', error);
+      if (!location.pathname.startsWith('/auth')) {
+        navigate('/auth/login');
+      }
+    }
+  };
+
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -43,48 +79,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (session?.user) {
           setUser(session.user);
           setSession(session);
-          
-          // Give time for the user_roles table to be populated if this is a new signup
-          setTimeout(async () => {
-            try {
-              const rolePromise = getUserRole(session.user.id);
-              const adminStatusPromise = checkAdminRole(session.user.id);
-              
-              const [role, adminStatus] = await Promise.all([rolePromise, adminStatusPromise]);
-              
-              setUserRole(role);
-              setIsAdmin(adminStatus);
-              
-              // Role-based redirects
-              const isAuthPage = location.pathname.startsWith('/auth');
-              if (!isAuthPage && role) {
-                if (role === 'admin' && !location.pathname.includes('admin-dashboard')) {
-                  navigate('/admin-dashboard');
-                } else if (role === 'employee' && !location.pathname.includes('employee-dashboard')) {
-                  navigate('/employee-dashboard');
-                }
-              } else if (!isAuthPage && !role) {
-                // If no role is found, wait a bit and try again (for new signups)
-                setTimeout(async () => {
-                  const retryRole = await getUserRole(session.user.id);
-                  if (retryRole) {
-                    setUserRole(retryRole);
-                    setIsAdmin(retryRole === 'admin');
-                    if (retryRole === 'admin') {
-                      navigate('/admin-dashboard');
-                    } else if (retryRole === 'employee') {
-                      navigate('/employee-dashboard');
-                    }
-                  } else {
-                    navigate('/auth/login');
-                  }
-                }, 2000);
-              }
-            } catch (error) {
-              console.error('Error fetching user role:', error);
-              navigate('/auth/login');
-            }
-          }, 1000);
+          await fetchUserRoleAndRedirect(session.user.id);
         } else {
           setUser(null);
           setSession(null);
@@ -126,57 +121,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setSession(session);
         
         if (event === 'SIGNED_IN') {
-          // Give a moment for the database to update
-          setTimeout(async () => {
-            try {
-              const role = await getUserRole(session.user.id);
-              console.log('User role after login:', role);
-              
-              setUserRole(role);
-              
-              const adminStatus = await checkAdminRole(session.user.id);
-              setIsAdmin(adminStatus);
-              
-              // Role-based navigation after auth change
-              const isAuthPage = location.pathname.startsWith('/auth');
-              if (!isAuthPage && role) {
-                if (role === 'admin') {
-                  navigate('/admin-dashboard');
-                } else if (role === 'employee') {
-                  navigate('/employee-dashboard');
-                }
-              } else if (role) {
-                if (role === 'admin') {
-                  navigate('/admin-dashboard');
-                } else if (role === 'employee') {
-                  navigate('/employee-dashboard');
-                }
-              } else {
-                // If still no role found, try one more time
-                setTimeout(async () => {
-                  const retryRole = await getUserRole(session.user.id);
-                  if (retryRole) {
-                    setUserRole(retryRole);
-                    setIsAdmin(retryRole === 'admin');
-                    if (retryRole === 'admin') {
-                      navigate('/admin-dashboard');
-                    } else if (retryRole === 'employee') {
-                      navigate('/employee-dashboard');
-                    }
-                  } else {
-                    console.error('No role found for user after multiple attempts');
-                    toast({
-                      title: "Role Assignment Error",
-                      description: "Unable to determine user role. Please contact administrator.",
-                      variant: "destructive",
-                    });
-                  }
-                }, 2000);
-              }
-            } catch (error) {
-              console.error('Error in auth change handler:', error);
-            }
-          }, 500);
+          await fetchUserRoleAndRedirect(session.user.id, true);
         }
       } else {
         setUser(null);
