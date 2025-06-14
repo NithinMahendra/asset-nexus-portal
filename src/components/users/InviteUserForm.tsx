@@ -1,35 +1,69 @@
 
 import React, { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 interface InviteUserFormProps {
   isOpen: boolean;
   onClose: () => void;
-  organizationId: string; // expect this to be provided from parent
+  organizationId: string;
   onSuccess?: () => void;
 }
 
-const InviteUserForm: React.FC<InviteUserFormProps> = ({ isOpen, onClose, organizationId, onSuccess }) => {
-  const [email, setEmail] = useState('');
-  const [role, setRole] = useState<'employee' | 'admin'>('employee');
+// Helper to generate a random UUID (client-side; just for form, as actual row ID will come from db)
+function generateUUID() {
+  // Simple uuid v4 generator, only for the form UI since db ultimately returns the generated id
+  return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(
+    /[018]/g,
+    c =>
+      (
+        Number(c) ^
+        (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (Number(c) / 4)))
+      ).toString(16)
+  );
+}
+
+const InviteUserForm: React.FC<InviteUserFormProps> = ({
+  isOpen,
+  onClose,
+  organizationId,
+  onSuccess,
+}) => {
+  // Make email optional for non-email invites
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState<"employee" | "admin">("employee");
   const [isLoading, setIsLoading] = useState(false);
-  const [inviteLink, setInviteLink] = useState('');
-  
+  const [inviteLink, setInviteLink] = useState("");
+  const [inviteId, setInviteId] = useState("");
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setInviteLink("");
+    setInviteId("");
     try {
-      // Create invitation in Supabase
+      // Insert invitation (with or without email)
       const { data, error } = await supabase
         .from("invitations")
         .insert({
-          email,
+          email: email.trim() === "" ? null : email.trim(), // allow null email
           role,
           organization_id: organizationId,
         })
@@ -38,16 +72,20 @@ const InviteUserForm: React.FC<InviteUserFormProps> = ({ isOpen, onClose, organi
 
       if (error) throw error;
 
-      // Compose invite link (copy to clipboard)
+      const invite_id = data.id;
+      setInviteId(invite_id);
+
+      // Compose invite link (for admin to share)
       const url = new URL(window.location.origin + "/auth/signup");
-      url.searchParams.set("invite", data.id);
+      url.searchParams.set("invite", invite_id);
       setInviteLink(url.toString());
 
       toast({
         title: "Invite created!",
-        description: `Invitation link copied to clipboard.`,
+        description: `Invite link generated.`,
       });
       navigator.clipboard.writeText(url.toString());
+
       setEmail("");
       setRole("employee");
       onSuccess && onSuccess();
@@ -62,12 +100,13 @@ const InviteUserForm: React.FC<InviteUserFormProps> = ({ isOpen, onClose, organi
     }
   };
 
-  // Always close dialog state resets
+  // Always reset state when dialog closes
   React.useEffect(() => {
     if (!isOpen) {
-      setEmail('');
-      setRole('employee');
-      setInviteLink('');
+      setEmail("");
+      setRole("employee");
+      setInviteLink("");
+      setInviteId("");
       setIsLoading(false);
     }
   }, [isOpen]);
@@ -82,14 +121,17 @@ const InviteUserForm: React.FC<InviteUserFormProps> = ({ isOpen, onClose, organi
           <div>
             <Input
               type="email"
-              placeholder="Enter user email"
-              required
+              placeholder="User email (optional)"
               value={email}
               onChange={e => setEmail(e.target.value)}
+              autoComplete="off"
             />
+            <span className="text-xs text-muted-foreground block mt-1">
+              Email is optional. Generate invite link without entering email if desired.
+            </span>
           </div>
           <div>
-            <Select value={role} onValueChange={(val) => setRole(val as "employee" | "admin")}>
+            <Select value={role} onValueChange={val => setRole(val as "employee" | "admin")}>
               <SelectTrigger>
                 <SelectValue placeholder="Select role" />
               </SelectTrigger>
@@ -102,7 +144,7 @@ const InviteUserForm: React.FC<InviteUserFormProps> = ({ isOpen, onClose, organi
 
           <DialogFooter>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? 'Sending...' : 'Send Invite'}
+              {isLoading ? "Generating..." : "Generate Invite"}
             </Button>
             <DialogClose asChild>
               <Button variant="outline" type="button">
@@ -116,6 +158,9 @@ const InviteUserForm: React.FC<InviteUserFormProps> = ({ isOpen, onClose, organi
           <div className="mt-4">
             <p className="text-sm mb-1">Invite link (copied to clipboard):</p>
             <Input readOnly value={inviteLink} className="text-xs" />
+            <p className="text-xs text-muted-foreground mt-1">
+              Share this link with your new team member for them to sign up.
+            </p>
           </div>
         )}
       </DialogContent>
@@ -124,3 +169,4 @@ const InviteUserForm: React.FC<InviteUserFormProps> = ({ isOpen, onClose, organi
 };
 
 export default InviteUserForm;
+
