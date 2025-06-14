@@ -3,34 +3,35 @@ import { UserRole } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 
 // Check if user has admin role
-export const checkAdminRole = async (userId: string): Promise<boolean> => {
-  const { data, error } = await supabase
+export const checkAdminRole = async (userId: string, orgId?: string): Promise<boolean> => {
+  const query = supabase
     .from('user_roles')
-    .select('role')
+    .select('role, organization_id')
     .eq('user_id', userId)
-    .single();
+    .eq('role', 'admin');
+  if (orgId) query.eq('organization_id', orgId);
+  const { data, error } = await query.maybeSingle();
 
   if (error) {
     console.error('Error checking admin role:', error);
     return false;
   }
-
-  return data?.role === 'admin';
+  return !!(data && data.role === 'admin');
 };
 
 // Get the specific role of a user
-export const getUserRole = async (userId: string): Promise<UserRole | null> => {
-  const { data, error } = await supabase
+export const getUserRole = async (userId: string, orgId?: string): Promise<UserRole | null> => {
+  const query = supabase
     .from('user_roles')
-    .select('role')
-    .eq('user_id', userId)
-    .single();
+    .select('role, organization_id')
+    .eq('user_id', userId);
+  if (orgId) query.eq('organization_id', orgId);
+  const { data, error } = await query.maybeSingle();
 
   if (error) {
     console.error('Error getting user role:', error);
     return null;
   }
-
   return data?.role as UserRole || null;
 };
 

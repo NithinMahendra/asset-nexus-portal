@@ -5,25 +5,61 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/integrations/supabase/client";
-import { Eye, EyeOff, Lock, Mail, User } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, User, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useEffect } from "react";
 
 const signupSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
   email: z.string().email({ message: "Please enter a valid email address" }),
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
   confirmPassword: z.string(),
+  orgOption: z.enum(['new', 'invite']),
+  orgName: z.string().optional(),
+  inviteToken: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
 });
 
 type SignupFormValues = z.infer<typeof signupSchema>;
+
+// Helper: check or create org
+async function getOrCreateOrganization(orgOption: "new" | "invite", orgName: string, inviteToken?: string) {
+  if (orgOption === "invite" && inviteToken) {
+    // Find pending invitation
+    const { data: invite, error } = await supabase
+      .from("invitations")
+      .select("*")
+      .eq("id", inviteToken)
+      .single();
+    if (error || !invite) throw new Error("Invalid invitation");
+    if (invite.status !== "pending" || !invite.organization_id) throw new Error("Invitation expired or invalid");
+    return { id: invite.organization_id, role: invite.role, invite };
+  } else if (orgOption === "new" && orgName) {
+    // Check uniqueness or create
+    let { data: orgLookup, error: lookupError } = await supabase
+      .from("organizations")
+      .select("id")
+      .eq("name", orgName)
+      .single();
+    if (orgLookup?.id) throw new Error("Organization already exists");
+    const { data: org, error: orgCreateError } = await supabase
+      .from("organizations")
+      .insert({ name: orgName })
+      .select("id")
+      .single();
+    if (orgCreateError || !org) throw new Error("Could not create organization");
+    return { id: org.id, role: "admin" }; // first user is admin
+  } else {
+    throw new Error("Organization selection required");
+  }
+}
 
 const SignupPage = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -39,13 +75,31 @@ const SignupPage = () => {
       email: "",
       password: "",
       confirmPassword: "",
+      orgOption: "new",
+      orgName: "",
+      inviteToken: "",
     },
   });
+
+  // Detect invite from URL
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const inviteToken = url.searchParams.get("invite");
+    if (inviteToken) {
+      form.setValue("orgOption", "invite");
+      form.setValue("inviteToken", inviteToken);
+    }
+    // eslint-disable-next-line
+  }, []);
 
   const onSubmit = async (data: SignupFormValues) => {
     setIsLoading(true);
     try {
-      // Check if user already exists to provide faster feedback
+      // ORG: New or existing
+      const orgName = data.orgOption === "new" ? (data.orgName || "") : "";
+      const { id: organization_id, role: newRole, invite } = await getOrCreateOrganization(data.orgOption, orgName, data.inviteToken);
+
+      // Check user already exists
       const { data: existingUsers, error: checkError } = await supabase
         .from('users')
         .select('email')
@@ -64,72 +118,74 @@ const SignupPage = () => {
         return;
       }
 
-      // Proceed with signup
+      // SIGNUP to auth
       const { error, data: authData } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
-          data: {
-            name: data.name,
-          },
-        },
+          data: { name: data.name },
+        }
       });
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       if (authData?.user) {
-        // Add user to the user_roles table with 'employee' role
-        // Changed from 'viewer' to 'employee' to match the database schema
-        const { error: roleError } = await supabase
-          .from('user_roles')
+        // Insert user in users table
+        const { error: userError } = await supabase
+          .from("users")
           .insert({
-            user_id: authData.user.id,
-            role: 'employee'
+            id: authData.user.id,
+            name: data.name,
+            email: data.email,
+            organization_id
           });
 
-        if (roleError) {
-          console.error("Error setting user role:", roleError);
+        if (userError) console.error("User table insert error", userError);
+
+        // Assign role in user_roles table
+        const userRoleRow = {
+          user_id: authData.user.id,
+          role: newRole || "employee",
+          organization_id,
+        };
+        await supabase.from("user_roles").insert(userRoleRow);
+
+        // Attach org and user to asset tables as needed (future)
+        if (invite && invite.id) {
+          await supabase.from("invitations").update({ status: "accepted" }).eq("id", invite.id);
         }
 
         toast({
           title: "Account created successfully",
           description: "You can now login with your credentials.",
         });
-        
+
         setRegistrationSuccess(true);
-        
-        // Clear form
         form.reset();
-        
-        // Auto-redirect to login after 2 seconds
+
         setTimeout(() => {
           navigate('/auth/login');
         }, 2000);
       } else {
-        // Handle case where user was not created
         toast({
           title: "Registration pending",
-          description: "Your account request has been submitted. Please check your email to confirm your registration.",
+          description: "Check your email to confirm your registration.",
         });
         setRegistrationSuccess(true);
         form.reset();
       }
     } catch (error: any) {
       console.error("Signup error:", error);
-      
-      // Improved error handling with specific messages
+
       let errorMessage = "An error occurred during signup";
-      
-      if (error.message.includes("already registered")) {
-        errorMessage = "Email already registered. Please try logging in instead.";
-      } else if (error.message.includes("email")) {
-        errorMessage = "Invalid email format";
-      } else if (error.message.includes("password")) {
-        errorMessage = "Password issue: " + error.message;
+      if (error.message?.includes("already exists")) {
+        errorMessage = "This organization already exists. Please join via invite or choose a different name.";
+      } else if (error.message?.includes("Invalid invitation")) {
+        errorMessage = "Invitation is invalid or expired.";
+      } else if (error.message) {
+        errorMessage = error.message;
       }
-      
+
       toast({
         title: "Registration failed",
         description: errorMessage,
@@ -146,7 +202,7 @@ const SignupPage = () => {
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">Create an account</CardTitle>
           <CardDescription className="text-center">
-            Enter your information to create an account
+            Enter your information to create an account and join or create your company.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -165,6 +221,7 @@ const SignupPage = () => {
           ) : (
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                {/* Name */}
                 <FormField
                   control={form.control}
                   name="name"
@@ -185,6 +242,7 @@ const SignupPage = () => {
                     </FormItem>
                   )}
                 />
+                {/* Email */}
                 <FormField
                   control={form.control}
                   name="email"
@@ -205,6 +263,7 @@ const SignupPage = () => {
                     </FormItem>
                   )}
                 />
+                {/* Password */}
                 <FormField
                   control={form.control}
                   name="password"
@@ -242,6 +301,8 @@ const SignupPage = () => {
                     </FormItem>
                   )}
                 />
+
+                {/* Confirm Password */}
                 <FormField
                   control={form.control}
                   name="confirmPassword"
@@ -279,6 +340,62 @@ const SignupPage = () => {
                     </FormItem>
                   )}
                 />
+
+                {/* Company/Organization selection */}
+                <FormField
+                  control={form.control}
+                  name="orgOption"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Organization</FormLabel>
+                      <FormControl>
+                        <div className="space-y-2">
+                          <div className="flex gap-2">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="radio"
+                                {...field}
+                                value="new"
+                                checked={form.watch("orgOption") === "new"}
+                                onChange={() => form.setValue("orgOption", "new")}
+                              />
+                              <span>Create New Company</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="radio"
+                                {...field}
+                                value="invite"
+                                checked={form.watch("orgOption") === "invite"}
+                                onChange={() => form.setValue("orgOption", "invite")}
+                              />
+                              <span>Join with Invite</span>
+                            </label>
+                          </div>
+                          {form.watch("orgOption") === "new" && (
+                            <Input
+                              placeholder="Company or organization name"
+                              icon={<Building2 className="h-4 w-4 text-muted-foreground" />}
+                              value={form.watch("orgName") || ""}
+                              onChange={e => form.setValue("orgName", e.target.value)}
+                              required
+                            />
+                          )}
+                          {form.watch("orgOption") === "invite" && (
+                            <Input
+                              placeholder="Invite code"
+                              value={form.watch("inviteToken") || ""}
+                              onChange={e => form.setValue("inviteToken", e.target.value)}
+                              required
+                            />
+                          )}
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? (
                     <>
