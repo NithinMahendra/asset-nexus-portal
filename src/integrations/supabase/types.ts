@@ -379,7 +379,7 @@ export type Database = {
       invitations: {
         Row: {
           created_at: string | null
-          email: string
+          email: string | null
           expires_at: string | null
           id: string
           organization_id: string
@@ -388,7 +388,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
-          email: string
+          email?: string | null
           expires_at?: string | null
           id?: string
           organization_id: string
@@ -397,7 +397,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
-          email?: string
+          email?: string | null
           expires_at?: string | null
           id?: string
           organization_id?: string
