@@ -131,7 +131,16 @@ const Users = () => {
         </div>
         <div className="flex gap-2">
           {isAdmin && (
-            <Button variant="secondary" onClick={() => setIsInviteUserOpen(true)}>
+            <Button
+              variant="secondary"
+              onClick={() => setIsInviteUserOpen(true)}
+              disabled={!organizationId || organizationId.trim() === ""}
+              title={
+                !organizationId || organizationId.trim() === ""
+                  ? "Cannot invite users without a valid organization"
+                  : undefined
+              }
+            >
               Invite User
             </Button>
           )}

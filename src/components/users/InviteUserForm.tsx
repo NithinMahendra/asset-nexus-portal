@@ -54,6 +54,18 @@ const InviteUserForm: React.FC<InviteUserFormProps> = ({
     setIsLoading(true);
     setInviteLink("");
     setInviteId("");
+
+    // Check if organizationId is missing or blank
+    if (!organizationId || organizationId.trim() === "") {
+      toast({
+        title: "Cannot invite user",
+        description: "A valid organization is required to generate an invite.",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      return;
+    }
+
     try {
       // Insert invitation (with or without email)
       const { data, error } = await supabase
