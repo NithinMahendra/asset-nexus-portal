@@ -1,4 +1,3 @@
-
 export type UserRole = 'admin' | 'employee';
 
 export interface User {
@@ -9,6 +8,7 @@ export interface User {
   department?: string;
   role: UserRole;
   profileImageUrl?: string;
+  organization_id?: string; // <-- Added to match db & code usage
 }
 
 export type AssetStatus = 'available' | 'assigned' | 'repair' | 'retired';
