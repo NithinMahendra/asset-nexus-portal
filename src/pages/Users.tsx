@@ -45,6 +45,7 @@ import { Badge } from '@/components/ui/badge';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import AddUserForm from '@/components/users/AddUserForm';
+import InviteUserForm from "@/components/users/InviteUserForm";
 
 const roleColors: Record<UserRole, string> = {
   admin: 'bg-amber-500',
@@ -63,6 +64,10 @@ const Users = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
+  const [isInviteUserOpen, setIsInviteUserOpen] = useState(false);
+
+  // You may need the current admin's organizationId, here we grab it from the first user, assuming all current users in this view are from same org:
+  const organizationId = users.length > 0 ? users[0].organization_id : "";
   
   // Load users from Supabase
   useEffect(() => {
@@ -112,6 +117,9 @@ const Users = () => {
     return parts[0][0];
   };
   
+  // DUMMY: Make this only visible to admins. In real production, replace with auth context check!
+  const isAdmin = users.some(u => u.role === "admin"); // crude guess
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex justify-between items-center">
@@ -121,10 +129,17 @@ const Users = () => {
             Manage user accounts and permissions
           </p>
         </div>
-        <Button className="bg-primary" onClick={() => setIsAddUserOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add User
-        </Button>
+        <div className="flex gap-2">
+          {isAdmin && (
+            <Button variant="secondary" onClick={() => setIsInviteUserOpen(true)}>
+              Invite User
+            </Button>
+          )}
+          <Button className="bg-primary" onClick={() => setIsAddUserOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add User
+          </Button>
+        </div>
       </div>
       
       <div className="flex flex-col sm:flex-row gap-4">
@@ -272,8 +287,16 @@ const Users = () => {
         onClose={() => setIsAddUserOpen(false)} 
         onSuccess={loadUsers}
       />
+
+      {/* Invite User Dialog */}
+      <InviteUserForm
+        isOpen={isInviteUserOpen}
+        onClose={() => setIsInviteUserOpen(false)}
+        organizationId={organizationId}
+        onSuccess={loadUsers}
+      />
     </div>
-  );
-};
+  )
+}
 
 export default Users;
