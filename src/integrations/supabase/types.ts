@@ -9,6 +9,79 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      activity_log: {
+        Row: {
+          action: string
+          asset_id: string | null
+          details: Json | null
+          id: string
+          timestamp: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          asset_id?: string | null
+          details?: Json | null
+          id?: string
+          timestamp?: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          asset_id?: string | null
+          details?: Json | null
+          id?: string
+          timestamp?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_log_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      asset_assignments: {
+        Row: {
+          asset_id: string
+          assigned_at: string
+          assigned_by: string
+          id: string
+          returned_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          asset_id: string
+          assigned_at?: string
+          assigned_by: string
+          id?: string
+          returned_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          asset_id?: string
+          assigned_at?: string
+          assigned_by?: string
+          id?: string
+          returned_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_assignments_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       asset_history: {
         Row: {
           action: string
@@ -87,18 +160,65 @@ export type Database = {
         }
         Relationships: []
       }
+      asset_requests: {
+        Row: {
+          asset_id: string | null
+          description: string
+          id: string
+          processed_at: string | null
+          processed_by: string | null
+          request_type: string
+          requested_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          asset_id?: string | null
+          description: string
+          id?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          request_type: string
+          requested_at?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          asset_id?: string | null
+          description?: string
+          id?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          request_type?: string
+          requested_at?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_requests_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assets: {
         Row: {
           assigned_date: string | null
           assigned_to: string | null
+          brand: string | null
           category: string
           created_at: string
           description: string | null
+          device_type: string | null
           id: string
           location: string | null
           model: string | null
           name: string
           purchase_date: string
+          qr_code: string | null
           serial_number: string | null
           status: string
           value: number | null
@@ -107,14 +227,17 @@ export type Database = {
         Insert: {
           assigned_date?: string | null
           assigned_to?: string | null
+          brand?: string | null
           category: string
           created_at?: string
           description?: string | null
+          device_type?: string | null
           id?: string
           location?: string | null
           model?: string | null
           name: string
           purchase_date: string
+          qr_code?: string | null
           serial_number?: string | null
           status: string
           value?: number | null
@@ -123,14 +246,17 @@ export type Database = {
         Update: {
           assigned_date?: string | null
           assigned_to?: string | null
+          brand?: string | null
           category?: string
           created_at?: string
           description?: string | null
+          device_type?: string | null
           id?: string
           location?: string | null
           model?: string | null
           name?: string
           purchase_date?: string
+          qr_code?: string | null
           serial_number?: string | null
           status?: string
           value?: number | null
@@ -176,6 +302,57 @@ export type Database = {
           operation?: string
           record_id?: string
           table_name?: string
+        }
+        Relationships: []
+      }
+      categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      employee_profiles: {
+        Row: {
+          created_at: string | null
+          email: string
+          employee_id: string
+          first_name: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          employee_id: string
+          first_name: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          employee_id?: string
+          first_name?: string
+          id?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -225,6 +402,66 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          title: string
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          title: string
+          type?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          title?: string
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_profiles: {
+        Row: {
+          created_at: string
+          department: string | null
+          first_name: string | null
+          id: string
+          last_name: string | null
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          department?: string | null
+          first_name?: string | null
+          id: string
+          last_name?: string | null
+          role?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          department?: string | null
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
@@ -370,6 +607,10 @@ export type Database = {
           changed_by: string
           changed_at: string
         }[]
+      }
+      get_dashboard_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
       get_maintenance_due_soon: {
         Args: { days_threshold: number }
