@@ -46,6 +46,7 @@ import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import AddUserForm from '@/components/users/AddUserForm';
 import InviteUserForm from "@/components/users/InviteUserForm";
+import { useCurrentUserInfo } from "@/hooks/useCurrentUserInfo";
 
 const roleColors: Record<UserRole, string> = {
   admin: 'bg-amber-500',
@@ -66,9 +67,8 @@ const Users = () => {
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [isInviteUserOpen, setIsInviteUserOpen] = useState(false);
 
-  // You may need the current admin's organizationId, here we grab it from the first user, assuming all current users in this view are from same org:
-  const organizationId = users.length > 0 ? users[0].organization_id : "";
-  
+  const { organizationId, loading: orgLoading } = useCurrentUserInfo();
+
   // Load users from Supabase
   useEffect(() => {
     loadUsers();
@@ -134,10 +134,12 @@ const Users = () => {
             <Button
               variant="secondary"
               onClick={() => setIsInviteUserOpen(true)}
-              disabled={!organizationId || organizationId.trim() === ""}
+              disabled={!organizationId || organizationId.trim() === "" || orgLoading}
               title={
-                !organizationId || organizationId.trim() === ""
-                  ? "Cannot invite users without a valid organization"
+                orgLoading
+                  ? "Loading organization data..."
+                  : !organizationId || organizationId.trim() === ""
+                  ? "Cannot invite users without a valid organization (check organization membership)."
                   : undefined
               }
             >
@@ -301,7 +303,7 @@ const Users = () => {
       <InviteUserForm
         isOpen={isInviteUserOpen}
         onClose={() => setIsInviteUserOpen(false)}
-        organizationId={organizationId}
+        organizationId={organizationId || ""}
         onSuccess={loadUsers}
       />
     </div>
