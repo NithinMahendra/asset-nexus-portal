@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { useAuth } from '@/providers/AuthProvider';
 import AdminDashboard from './AdminDashboard';
 import UserDashboard from './UserDashboard';
 import { Skeleton } from '@/components/ui/skeleton';
+import AuditLogStub from "@/components/AuditLogStub";
 
 const Enterprise: React.FC = () => {
   const { userRole, isLoading } = useAuth();
@@ -22,8 +22,19 @@ const Enterprise: React.FC = () => {
     );
   }
   
-  // Render the appropriate dashboard based on user role
-  return userRole === 'admin' ? <AdminDashboard /> : <UserDashboard />;
+  // If employee, display audit log section at bottom (stub for now)
+  if (userRole === "employee") {
+    return (
+      <div>
+        <UserDashboard />
+        <div className="mt-6">
+          <AuditLogStub />
+        </div>
+      </div>
+    );
+  }
+  // If admin, show original
+  return <AdminDashboard />;
 };
 
 export default Enterprise;

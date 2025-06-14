@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -46,9 +45,12 @@ const AdminDashboard: React.FC = () => {
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="users">User Management</TabsTrigger>
+            <TabsTrigger value="asset-workflow">Asset Workflow</TabsTrigger>
+            <TabsTrigger value="financials">Financials</TabsTrigger>
             <TabsTrigger value="qr-codes">QR Code Generator</TabsTrigger>
             <TabsTrigger value="analytics">System Analytics</TabsTrigger>
             <TabsTrigger value="audit-logs">Audit Logs</TabsTrigger>
+            <TabsTrigger value="reports">Reports</TabsTrigger>
           </TabsList>
           
           <TabsContent value="overview" className="space-y-4">
@@ -148,6 +150,42 @@ const AdminDashboard: React.FC = () => {
             </Card>
           </TabsContent>
           
+          <TabsContent value="asset-workflow" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Asset Workflow Approvals</CardTitle>
+                <CardDescription>
+                  Approve or reject pending asset assignment requests from employees.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Workflow approvals UI will allow admins to review, approve, or reject requests here.
+                </p>
+                <div className="mt-4 flex gap-2">
+                  <Button disabled>Approve</Button>
+                  <Button variant="destructive" disabled>Reject</Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="financials" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Asset Financial Overview</CardTitle>
+                <CardDescription>
+                  See aggregate purchase cost, depreciation, and budget highlights.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Financial reporting UI coming soon. This will show purchase costs, depreciation, and budgets.
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
           <TabsContent value="qr-codes" className="space-y-4">
             <Card>
               <CardHeader>
@@ -234,6 +272,25 @@ const AdminDashboard: React.FC = () => {
               <CardFooter>
                 <Button variant="outline">Export Logs</Button>
               </CardFooter>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="reports" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Reports</CardTitle>
+                <CardDescription>
+                  Generate and export system reports by asset, user, or time period.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Custom reporting builder and export options coming soon.
+                </p>
+                <Button variant="outline" size="sm" disabled>
+                  Generate Report
+                </Button>
+              </CardContent>
             </Card>
           </TabsContent>
         </Tabs>

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -90,9 +89,19 @@ const UserDashboard: React.FC = () => {
                 <div className="text-center mt-8">
                   <p className="text-muted-foreground">Assigned assets will appear here</p>
                 </div>
+                {/* Financial info stub */}
+                <div className="mt-6">
+                  <h4 className="font-semibold text-base">Asset Financial Info</h4>
+                  <p className="text-muted-foreground text-sm">
+                    Purchase cost, depreciation, and insurance info will appear here.
+                  </p>
+                </div>
               </CardContent>
-              <CardFooter>
+              <CardFooter className="flex flex-col md:flex-row md:justify-between gap-2">
                 <Button variant="outline">Request New Asset</Button>
+                <Button variant="secondary" disabled>
+                  See Financial Info
+                </Button>
               </CardFooter>
             </Card>
           </TabsContent>
@@ -117,8 +126,11 @@ const UserDashboard: React.FC = () => {
                   <p className="text-muted-foreground">Maintenance requests will appear here</p>
                 </div>
               </CardContent>
-              <CardFooter>
+              <CardFooter className="flex flex-col md:flex-row md:justify-between gap-2">
                 <Button>New Maintenance Request</Button>
+                <Button variant="secondary" disabled>
+                  View Maintenance Costs
+                </Button>
               </CardFooter>
             </Card>
           </TabsContent>
