@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import {
   Dialog,
@@ -27,17 +26,14 @@ interface InviteUserFormProps {
   onSuccess?: () => void;
 }
 
-// Helper to generate a random UUID (client-side; just for form, as actual row ID will come from db)
+// Correct RFC4122 v4 UUID generator for TypeScript (no array math, safe)
 function generateUUID() {
-  // Simple uuid v4 generator, only for the form UI since db ultimately returns the generated id
-  return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(
-    /[018]/g,
-    c =>
-      (
-        Number(c) ^
-        (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (Number(c) / 4)))
-      ).toString(16)
-  );
+  // Generates a random RFC4122 version 4 UUID
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = crypto.getRandomValues(new Uint8Array(1))[0] & 15;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
 }
 
 const InviteUserForm: React.FC<InviteUserFormProps> = ({
@@ -169,4 +165,3 @@ const InviteUserForm: React.FC<InviteUserFormProps> = ({
 };
 
 export default InviteUserForm;
-
