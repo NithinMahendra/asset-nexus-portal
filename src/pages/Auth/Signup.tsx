@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -137,7 +136,8 @@ const SignupPage = () => {
             id: authData.user.id,
             name: data.name,
             email: data.email,
-            organization_id
+            organization_id,
+            role: newRole as "admin" | "employee" // FIX: role is required!
           });
 
         if (userError) console.error("User table insert error", userError);
@@ -145,7 +145,7 @@ const SignupPage = () => {
         // Assign role in user_roles table
         const userRoleRow = {
           user_id: authData.user.id,
-          role: newRole || "employee",
+          role: (newRole as "admin" | "employee"), // FIX: correct typing for role
           organization_id,
         };
         await supabase.from("user_roles").insert(userRoleRow);
@@ -373,13 +373,19 @@ const SignupPage = () => {
                             </label>
                           </div>
                           {form.watch("orgOption") === "new" && (
-                            <Input
-                              placeholder="Company or organization name"
-                              icon={<Building2 className="h-4 w-4 text-muted-foreground" />}
-                              value={form.watch("orgName") || ""}
-                              onChange={e => form.setValue("orgName", e.target.value)}
-                              required
-                            />
+                            <div className="relative">
+                              {/* Add Building2 icon */}
+                              <span className="absolute left-3 top-3">
+                                <Building2 className="h-4 w-4 text-muted-foreground" />
+                              </span>
+                              <Input
+                                placeholder="Company or organization name"
+                                className="pl-10"
+                                value={form.watch("orgName") || ""}
+                                onChange={e => form.setValue("orgName", e.target.value)}
+                                required
+                              />
+                            </div>
                           )}
                           {form.watch("orgOption") === "invite" && (
                             <Input
